@@ -1,0 +1,29 @@
+is-connected: # $KE
+    handler: just_ke
+    return: bool
+
+relay-set: # $KE,REL,<ReleNumber - port>,<Value - value>
+    handler: relay_set
+    params:
+        port: integer
+	value: bool
+    return: bool
+
+line-get: # $KE,RD,<LineNumber - lineno>
+    handler: line_get
+    params:
+        lineno: integer
+    return: bool
+
+line-set: # $KE,RD,<LineNumber - lineno>,<Value - value>
+    handler: line_set
+    params:
+        lineno: integer
+        value: bool
+    return: bool
+
+adc-get: # $KE,ADC,<ChannelNumber - channel>
+    handler: adc_get
+    params:
+        channel: integer
+    return: float
