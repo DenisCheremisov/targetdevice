@@ -6,7 +6,7 @@ relay-set: # $KE,REL,<ReleNumber - port>,<Value - value>
     handler: relay_set
     params:
         port: integer
-	value: bool
+        value: bool
     return: bool
 
 line-get: # $KE,RD,<LineNumber - lineno>
