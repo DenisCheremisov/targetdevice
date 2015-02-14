@@ -148,8 +148,8 @@ int main(int argc, char **argv) {
             free(tmp);
         } else {
             puts("-------------------\n");
-            printf("%s\n", command);
-            printf("%s\n", buf);
+            printf("Command: %s", command);
+            printf("Reply: %s\n", buf);
         }
     }
     return 0;
