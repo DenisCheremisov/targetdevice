@@ -3,6 +3,15 @@
 
 #include <yaml.h>
 
-int parse(FILE *stream);
+#include "map_lib.h"
+
+map_t *config_parse(FILE *stream);
+
+
+typedef struct {
+    char *handler;
+    char *ret_type;
+    map_t *params;
+} rule_t;
 
 #endif

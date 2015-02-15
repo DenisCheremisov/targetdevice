@@ -1,14 +1,20 @@
 all: targetdevice.o
-		gcc -o targetdevice targetdevice.o confparser.o
+		gcc -o targetdevice targetdevice.o confparser.o -lyaml
 
 targetdevice.o: targetdevice.c
 		gcc -c targetdevice.c
 
 confparser.o: confparser.c
-		gcc -lyaml -c confparser.c
+		gcc -c confparser.c
+
+map_lib.o: map_lib.c
+		gcc -c map_lib.c
 
 clean:
-		rm *.o targetdevice
+		rm -f *.o targetdevice confparser_test
 
-confparser: confparser.o
-		gcc -o confparser confparser.o -lyaml
+
+# This is for test purposes only
+
+confparser_test: confparser.o map_lib.o confparser_test.c
+		gcc -o confparser_test confparser_test.c confparser.o map_lib.o -lyaml
