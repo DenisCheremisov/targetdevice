@@ -70,10 +70,9 @@ int map_set(map_t *m, char *name, void *value) {
     map_t *map;
 
     if(m->name == NULL) {
-        m->name = (char *)malloc(strlen(name) + 1);
+        m->name = strdup(name);
         if(!m->name)
             return -1;
-        strcpy(m->name, name);
         m->value = value;
         m->next = NULL;
         return 0;
@@ -93,11 +92,10 @@ int map_set(map_t *m, char *name, void *value) {
                 return -1;
             }
             map = map->next;
-            map->name = (char *)malloc(strlen(name) + 1);
+            map->name = strdup(name);
             if(!map->name) {
                 return -1;
             }
-            strcpy(map->name, name);
             map->value = value;
             map->next = NULL;
             return 0;
@@ -115,4 +113,21 @@ void *map_get(map_t *m, char *name) {
         }
     }
     return NULL;
+}
+
+
+int map_len(map_t *m) {
+    int counter;
+    if(m == NULL) {
+        return 0;
+    }
+    if(m->name == NULL) {
+        return 0;
+    }
+    counter = 1;
+    while(m->next != NULL) {
+        m = m->next;
+        counter++;
+    }
+    return counter;
 }
