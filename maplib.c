@@ -28,9 +28,16 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
-#include "map_lib.h"
+#include "maplib.h"
+
+
+void unhandled_error() {
+    perror("");
+    exit(EXIT_FAILURE);
+}
 
 
 map_t *map_create() {
@@ -66,16 +73,16 @@ void map_free(map_t *map) {
 }
 
 
-int map_set(map_t *m, char *name, void *value) {
+void map_set(map_t *m, char *name, void *value) {
     map_t *map;
 
     if(m->name == NULL) {
         m->name = strdup(name);
         if(!m->name)
-            return -1;
+            unhandled_error();
         m->value = value;
         m->next = NULL;
-        return 0;
+        return;
     }
 
     for(map = m;; map = map->next) {
@@ -83,25 +90,25 @@ int map_set(map_t *m, char *name, void *value) {
             if(map->value !=  NULL) {
                 free(map->value);
                 map->value = value;
-                return 0;
+                return;
             }
         }
         if(map->next == NULL) {
             map->next = (map_t *)malloc(sizeof(map_t));
             if(!map->next) {
-                return -1;
+                unhandled_error();
             }
             map = map->next;
             map->name = strdup(name);
             if(!map->name) {
-                return -1;
+                unhandled_error();
             }
             map->value = value;
             map->next = NULL;
-            return 0;
+            return;
         }
     }
-    return -1;
+    unhandled_error();
 }
 
 

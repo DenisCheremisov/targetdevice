@@ -1,4 +1,4 @@
-all: targetdevice.o
+all: targetdevice.o confparser.o maplib.o
 		gcc -o targetdevice targetdevice.o confparser.o -lyaml
 
 targetdevice.o: targetdevice.c
@@ -7,8 +7,8 @@ targetdevice.o: targetdevice.c
 confparser.o: confparser.c
 		gcc -c confparser.c
 
-map_lib.o: map_lib.c
-		gcc -c map_lib.c
+maplib.o: maplib.c
+		gcc -c maplib.c
 
 clean:
 		rm -f *.o targetdevice confparser_test
@@ -16,5 +16,5 @@ clean:
 
 # This is for test purposes only
 
-confparser_test: confparser.o map_lib.o confparser_test.c
-		gcc -o confparser_test confparser_test.c confparser.o map_lib.o -lyaml
+confparser_test: confparser.o maplib.o confparser_test.c
+		gcc -o confparser_test confparser_test.c confparser.o maplib.o -lyaml

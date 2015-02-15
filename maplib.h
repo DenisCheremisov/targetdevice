@@ -40,7 +40,7 @@ typedef struct map_t {
 
 map_t *map_create();
 void map_free(map_t *map);
-int map_set(map_t *m, char *name, void *value);
+void map_set(map_t *m, char *name, void *value);
 void *map_get(map_t *m, char *name);
 int map_len(map_t *m);
 

@@ -3,7 +3,7 @@
 
 #include <yaml.h>
 
-#include "map_lib.h"
+#include "maplib.h"
 
 map_t *config_parse(FILE *stream);
 
