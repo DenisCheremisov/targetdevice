@@ -1,26 +1,26 @@
 is-connected: # $KE
     handler: just_ke
-    return: bool
+    return: bit
 
 relay-set: # $KE,REL,<ReleNumber - port>,<Value - value>
     handler: relay_set
     params:
         port: integer
-        value: bool
-    return: bool
+        value: bit
+    return: bit
 
 line-get: # $KE,RD,<LineNumber - lineno>
     handler: line_get
     params:
         lineno: integer
-    return: bool
+    return: bit
 
 line-set: # $KE,RD,<LineNumber - lineno>,<Value - value>
     handler: line_set
     params:
         lineno: integer
-        value: bool
-    return: bool
+        value: bit
+    return: bit
 
 adc-get: # $KE,ADC,<ChannelNumber - channel>
     handler: adc_get

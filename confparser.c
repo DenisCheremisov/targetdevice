@@ -40,9 +40,24 @@ void definition_is_ok(int handler_is_ok, int ret_type_is_ok, yaml_event_t *event
 }
 
 
-void raise_error() {
+void error_raise() {
     perror("System error");
     exit(EXIT_FAILURE);
+}
+
+
+types_t type_decoded(yaml_event_t *event) {
+    char *value;
+    value = event->data.scalar.value;
+    if(strcmp(value, "bit") == 0) {
+        return TYPE_BIT;
+    } else if(strcmp(value, "integer") == 0) {
+        return TYPE_INTEGER;
+    } else if(strcmp(value, "float") == 0) {
+        return TYPE_FLOAT;
+    }
+    fprintf(stderr, "%s - ", value);
+    something_went_wrong_named(event, "no such type");
 }
 
 
@@ -163,16 +178,13 @@ map_t* config_parse(FILE *file_stream) {
             case ON_HANDLER_NAME:
                 rule->handler = strdup(value);
                 if(!rule->handler) {
-                    raise_error();
+                    error_raise();
                 }
                 status = ON_RULE_BODY;
                 handler_filled = 1;
                 break;
             case ON_RETURN_TYPE:
-                rule->ret_type = strdup(value);
-                if(!rule->ret_type) {
-                    raise_error();
-                }
+                rule->ret_type = type_decoded(&event);
                 ret_type_filled = 1;
                 status = ON_RULE_BODY;
                 break;
@@ -181,11 +193,7 @@ map_t* config_parse(FILE *file_stream) {
                 status = ON_PARAM_TYPE;
                 break;
             case ON_PARAM_TYPE:
-                tmp = strdup(value);
-                if(!tmp) {
-                    raise_error();
-                }
-                map_set(params, param_name, tmp);
+                map_set(params, param_name, (int*)type_decoded(&event));
                 status = ON_PARAM_NAME;
                 params_filled = 1;
             }

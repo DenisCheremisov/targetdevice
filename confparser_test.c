@@ -18,44 +18,44 @@ int test1(void) {
 
     assert(rule != NULL);
     assert(strcmp(rule->handler, "just_ke") == 0);
-    assert(strcmp(rule->ret_type, "bool") == 0);
+    assert((types_t)rule->ret_type == TYPE_BIT);
     map_len(rule->params);
     assert(map_len(rule->params) == 0);
 
     rule = map_get(res, "relay-set");
     assert(rule != NULL);
     assert(strcmp(rule->handler, "relay_set") == 0);
-    assert(strcmp(rule->ret_type, "bool") == 0);
+    assert((types_t)rule->ret_type == TYPE_BIT);
     param = map_get(rule->params, "port");
-    assert(strcmp(param, "integer") == 0);
+    assert((types_t)param == TYPE_INTEGER);
     param = map_get(rule->params, "value");
-    assert(strcmp(param, "bool") == 0);
+    assert((types_t)param == TYPE_BIT);
     assert(map_len(rule->params) == 2);
 
     rule = map_get(res, "line-get");
     assert(rule != NULL);
     assert(strcmp(rule->handler, "line_get") == 0);
-    assert(strcmp(rule->ret_type, "bool") == 0);
+    assert((types_t)rule->ret_type == TYPE_BIT);
     param = map_get(rule->params, "lineno");
-    assert(strcmp(param, "integer") == 0);
+    assert((types_t)param == TYPE_INTEGER);
     assert(map_len(rule->params) == 1);
 
     rule = map_get(res, "line-set");
     assert(rule != NULL);
     assert(strcmp(rule->handler, "line_set") == 0);
-    assert(strcmp(rule->ret_type, "bool") == 0);
+    assert((types_t)rule->ret_type == TYPE_BIT);
     param = map_get(rule->params, "lineno");
-    assert(strcmp(param, "integer") == 0);
+    assert((types_t)param == TYPE_INTEGER);
     param = map_get(rule->params, "value");
-    assert(strcmp(param, "bool") == 0);
+    assert((types_t)param == TYPE_BIT);
     assert(map_len(rule->params) == 2);
 
     rule = map_get(res, "adc-get");
     assert(rule != NULL);
     assert(strcmp(rule->handler, "adc_get") == 0);
-    assert(strcmp(rule->ret_type, "float") == 0);
+    assert((types_t)rule->ret_type == TYPE_FLOAT);
     param = map_get(rule->params, "channel");
-    assert(strcmp(param, "integer") == 0);
+    assert((types_t)param == TYPE_INTEGER);
     assert(map_len(rule->params) == 1);
 
     assert(map_len(res) == 5);
