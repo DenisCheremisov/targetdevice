@@ -123,6 +123,55 @@ void *map_get(map_t *m, char *name) {
 }
 
 
+void *map_pop(map_t *m, char *name) {
+    map_t *map, *prev, *tmp;
+    void *result;
+    result = NULL;
+    prev = NULL;
+    for(map = m; map !=  NULL; map = map->next) {
+        if(map->name && strcmp(name, map->name) == 0) {
+            result = map->value;
+            if(map == m) {
+                if(map->next == NULL) {
+                    free(map->name);
+                    map->name = NULL;
+                    map->value = NULL;
+                } else {
+                    free(map->name);
+                    map->name = map->next->name;
+                    map->value = map->next->value;
+                    tmp = map->next;
+                    map->next = map->next->next;
+                    free(tmp);
+                }
+            } else if (map->next == NULL) {
+                prev->next = NULL;
+                free(map->name);
+                free(map);
+            } else {
+                prev->next = map->next;
+                free(map->name);
+                free(map);
+            }
+            break;
+        }
+        prev = map;
+    }
+    return result;
+}
+
+
+int map_has(map_t *m, char *name) {
+    map_t *map;
+    for(map = m; map != NULL; map = map->next) {
+        if(map->name && strcmp(name, map->name) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 int map_len(map_t *m) {
     int counter;
     if(m == NULL) {
