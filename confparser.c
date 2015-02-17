@@ -174,6 +174,10 @@ map_t* config_parse(FILE *file_stream) {
             switch(status) {
             case ON_RULE_NAME:
                 rule_name = strdup(event.data.scalar.value);
+                if(map_has(result, rule_name)) {
+                    free(rule_name);
+                    something_went_wrong_named(&event, "Duplicate rule name");
+                }
                 status = ON_RULE_BODY_START;
                 rule = (rule_t*)malloc(sizeof(rule_t));
                 params = map_create();
@@ -206,6 +210,10 @@ map_t* config_parse(FILE *file_stream) {
                 break;
             case ON_PARAM_NAME:
                 param_name = strdup(value);
+                if(map_has(params, param_name)) {
+                    free(param_name);
+                    something_went_wrong_named(&event, "Duplicate parameter");
+                }
                 status = ON_PARAM_TYPE;
                 break;
             case ON_PARAM_TYPE:
