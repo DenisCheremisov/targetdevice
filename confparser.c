@@ -28,7 +28,23 @@ void something_went_wrong_named(yaml_event_t *event, char *message) {
 }
 
 
-void something_went_wrong(yaml_event_t *event) {
+void something_went_wrong_stated(yaml_event_t *event, status_t status) {
+    char *message;
+    switch(status) {
+    case ON_RETURN_TYPE:
+        message = "Expected return type";
+        break;
+    case ON_PARAMS_READ:
+        message = "Expected parameters";
+        break;
+    case ON_PARAM_TYPE:
+        message = "Expected parameter type";
+        break;
+    case ON_RULE_BODY_START:
+    case ON_RULE_BODY:
+        message = "Expected rule definition";
+        break;
+    }
     something_went_wrong_named(event, "Parsing error");
 }
 
@@ -100,7 +116,7 @@ map_t* config_parse(FILE *file_stream) {
 
         case YAML_DOCUMENT_END_EVENT:
             if(status != ON_RULE_WAIT) {
-                something_went_wrong(&event);
+                something_went_wrong_stated(&event, status);
             }
             break;
 
@@ -123,7 +139,7 @@ map_t* config_parse(FILE *file_stream) {
                 status = ON_PARAM_NAME;
                 break;
             default:
-                something_went_wrong(&event);
+                something_went_wrong_stated(&event, status);
             }
             break;
 
@@ -145,7 +161,7 @@ map_t* config_parse(FILE *file_stream) {
                 status = ON_RULE_WAIT;
                 break;
             default:
-                something_went_wrong(&event);
+                something_went_wrong_stated(&event, status);
             }
             break;
 
