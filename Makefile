@@ -16,7 +16,7 @@ maplib.o: maplib.c
 		$(CC) $(OPTS) $(LPATH) $(IPATH) -c maplib.c
 
 clean:
-		rm -f *.o targetdevice confparser_test
+		rm -f *.o targetdevice confparser_test maplib_test
 
 
 # This is for test purposes only
