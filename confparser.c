@@ -9,7 +9,6 @@ typedef enum {
     ON_RULE_NAME,
     ON_RULE_BODY_START,
     ON_RULE_BODY,
-    ON_HANDLER_NAME,
     ON_RETURN_TYPE,
     ON_PARAMS_READ,
     ON_PARAM_NAME,
@@ -49,8 +48,8 @@ void something_went_wrong_stated(yaml_event_t *event, status_t status) {
 }
 
 
-void definition_is_ok(int handler_is_ok, int ret_type_is_ok, yaml_event_t *event) {
-    if(!(handler_is_ok && ret_type_is_ok)) {
+void definition_is_ok(int ret_type_is_ok, yaml_event_t *event) {
+    if(!ret_type_is_ok) {
         something_went_wrong_named(event, "Incomplete rule");
     }
 }
@@ -84,7 +83,7 @@ map_t* config_parse(FILE *file_stream) {
     map_t *result, *params;
     rule_t *rule;
     char *rule_name, *param_name, *value, *tmp;
-    int handler_filled, ret_type_filled;
+    int ret_type_filled;
     int params_filled;
 
     /* Initialize parser */
@@ -129,7 +128,6 @@ map_t* config_parse(FILE *file_stream) {
             switch(status) {
             case ON_RULE_WAIT:
                 status = ON_RULE_NAME;
-                handler_filled = 0;
                 ret_type_filled = 0;
                 break;
             case ON_RULE_BODY_START:
@@ -153,7 +151,7 @@ map_t* config_parse(FILE *file_stream) {
                 status = ON_RULE_BODY;
                 break;
             case ON_RULE_BODY:
-                definition_is_ok(handler_filled, ret_type_filled, &event);
+                definition_is_ok(ret_type_filled, &event);
                 map_set(result, rule_name, rule);
                 status = ON_RULE_NAME;
                 break;
@@ -184,9 +182,7 @@ map_t* config_parse(FILE *file_stream) {
                 params_filled = 0;
                 break;
             case ON_RULE_BODY:
-                if(strcmp(value, "handler") == 0) {
-                    status = ON_HANDLER_NAME;
-                } else if(strcmp(value, "return") == 0) {
+                if(strcmp(value, "return") == 0) {
                     status = ON_RETURN_TYPE;
                 } else if(strcmp(value, "params") == 0) {
                     status = ON_PARAMS_READ;
@@ -194,14 +190,6 @@ map_t* config_parse(FILE *file_stream) {
                     fprintf(stderr, "%s - ", value);
                     something_went_wrong_named(&event, "wrong value for rule");
                 }
-                break;
-            case ON_HANDLER_NAME:
-                rule->handler = strdup(value);
-                if(!rule->handler) {
-                    error_raise();
-                }
-                status = ON_RULE_BODY;
-                handler_filled = 1;
                 break;
             case ON_RETURN_TYPE:
                 rule->ret_type = type_decoded(&event);

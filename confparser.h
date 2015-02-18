@@ -14,7 +14,6 @@ typedef enum {
 
 
 typedef struct {
-    char *handler;
     types_t ret_type;
     map_t *params;
 } rule_t;

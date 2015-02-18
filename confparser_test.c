@@ -17,14 +17,12 @@ int test1(void) {
     rule = map_get(res, "is-connected");
 
     assert(rule != NULL);
-    assert(strcmp(rule->handler, "just_ke") == 0);
     assert((types_t)rule->ret_type == TYPE_BIT);
     map_len(rule->params);
     assert(map_len(rule->params) == 0);
 
     rule = map_get(res, "relay-set");
     assert(rule != NULL);
-    assert(strcmp(rule->handler, "relay_set") == 0);
     assert((types_t)rule->ret_type == TYPE_BIT);
     param = map_get(rule->params, "port");
     assert((types_t)param == TYPE_INTEGER);
@@ -34,7 +32,6 @@ int test1(void) {
 
     rule = map_get(res, "line-get");
     assert(rule != NULL);
-    assert(strcmp(rule->handler, "line_get") == 0);
     assert((types_t)rule->ret_type == TYPE_BIT);
     param = map_get(rule->params, "lineno");
     assert((types_t)param == TYPE_INTEGER);
@@ -42,7 +39,6 @@ int test1(void) {
 
     rule = map_get(res, "line-set");
     assert(rule != NULL);
-    assert(strcmp(rule->handler, "line_set") == 0);
     assert((types_t)rule->ret_type == TYPE_BIT);
     param = map_get(rule->params, "lineno");
     assert((types_t)param == TYPE_INTEGER);
@@ -52,7 +48,6 @@ int test1(void) {
 
     rule = map_get(res, "adc-get");
     assert(rule != NULL);
-    assert(strcmp(rule->handler, "adc_get") == 0);
     assert((types_t)rule->ret_type == TYPE_FLOAT);
     param = map_get(rule->params, "channel");
     assert((types_t)param == TYPE_INTEGER);
