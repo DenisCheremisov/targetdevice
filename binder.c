@@ -33,3 +33,60 @@ void handler_bind(map_t *handler_map, char *handler_name, handler_t handler,
 
     map_set(handler_map, handler_name, binding);
 }
+
+
+int check_float(char *value) {
+    int count;
+    double dest;
+    char *rem;
+
+    rem = strdup(value);
+    if(rem == NULL) {
+        exit(EXIT_FAILURE);
+    }
+    count = sscanf(value, "%lf%s", &dest, rem);
+    if(count == 1) {
+        return 0;
+    }
+    return -1;
+}
+
+
+int check_integer(char *value) {
+    int count;
+    int dest;
+    char *rem;
+
+    rem = strdup(value);
+    if(rem == NULL) {
+        exit(EXIT_FAILURE);
+    }
+    count = sscanf(value, "%d%s", &dest, rem);
+    if(count == 1) {
+        return 0;
+    }
+    return -1;
+}
+
+
+int check_bit(char *value) {
+    int count;
+    int dest;
+    char *rem;
+
+    rem = strdup(value);
+    if(rem == NULL) {
+        exit(EXIT_FAILURE);
+    }
+    count = sscanf(value, "%d%s", &dest, rem);
+    if(count == 1 && -1 < dest && dest < 2) {
+        return 0;
+    }
+    return -1;
+}
+
+
+
+//
+// Check if parameter is described and its value suits parameter type
+#define CHECKANDSET(variable, parameters, param_name, value) 0

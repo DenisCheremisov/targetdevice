@@ -57,6 +57,22 @@ int main(int argc, char **argv) {
     type = (types_t)map_get(semantics->params, "channel");
     assert(type == TYPE_INTEGER);
 
+    assert(check_float("1.23434") == 0);
+    assert(check_float("12.1ipo") < 0);
+    assert(check_float("a12") < 0);
+
+    assert(check_integer("1.23434") < 0);
+    assert(check_integer("12.1ipo") < 0);
+    assert(check_integer("a12") < 0);
+    assert(check_integer("123") == 0);
+
+    assert(check_bit("1.23434") < 0);
+    assert(check_bit("12.1ipo") < 0);
+    assert(check_bit("a12") < 0);
+    assert(check_bit("123") < 0);
+    assert(check_bit("1") == 0);
+    assert(check_bit("0") == 0);
+
     printf("Success!\n");
 
     return 0;
