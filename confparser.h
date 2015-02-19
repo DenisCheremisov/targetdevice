@@ -9,7 +9,7 @@ map_t *config_parse(FILE *stream);
 
 
 typedef enum {
-    TYPE_BIT, TYPE_INTEGER, TYPE_FLOAT
+    TYPE_TO_NEVER_USE = 0, TYPE_BIT, TYPE_INTEGER, TYPE_FLOAT
 } types_t;
 
 
