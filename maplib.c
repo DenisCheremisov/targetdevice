@@ -45,7 +45,7 @@ map_t *map_create() {
     m = (map_t *)malloc(sizeof(map_t));
     if(!m)
         return NULL;
-    m->name = NULL;
+    m->key = NULL;
     m->value = NULL;
     m->next = NULL;
     return m;
@@ -60,8 +60,8 @@ void map_free(map_t *map) {
 
     m = map;
     while(m !=  NULL) {
-        if(m->name !=  NULL) {
-            free(m->name);
+        if(m->key !=  NULL) {
+            free(m->key);
         }
         if(m->value !=  NULL) {
             free(m->value);
@@ -73,12 +73,12 @@ void map_free(map_t *map) {
 }
 
 
-void map_set(map_t *m, char *name, void *value) {
+void map_set(map_t *m, char *key, void *value) {
     map_t *map;
 
-    if(m->name == NULL) {
-        m->name = strdup(name);
-        if(!m->name)
+    if(m->key == NULL) {
+        m->key = strdup(key);
+        if(!m->key)
             unhandled_error();
         m->value = value;
         m->next = NULL;
@@ -86,7 +86,7 @@ void map_set(map_t *m, char *name, void *value) {
     }
 
     for(map = m;; map = map->next) {
-        if(strcmp(name, map->name) == 0) {
+        if(strcmp(key, map->key) == 0) {
             if(map->value !=  NULL) {
                 free(map->value);
                 map->value = value;
@@ -99,8 +99,8 @@ void map_set(map_t *m, char *name, void *value) {
                 unhandled_error();
             }
             map = map->next;
-            map->name = strdup(name);
-            if(!map->name) {
+            map->key = strdup(key);
+            if(!map->key) {
                 unhandled_error();
             }
             map->value = value;
@@ -112,10 +112,10 @@ void map_set(map_t *m, char *name, void *value) {
 }
 
 
-void *map_get(map_t *m, char *name) {
+void *map_get(map_t *m, char *key) {
     map_t *map;
     for(map = m; map !=  NULL; map = map->next) {
-        if(map->name && strcmp(name, map->name) == 0) {
+        if(map->key && strcmp(key, map->key) == 0) {
             return map->value;
         }
     }
@@ -123,22 +123,22 @@ void *map_get(map_t *m, char *name) {
 }
 
 
-void *map_pop(map_t *m, char *name) {
+void *map_pop(map_t *m, char *key) {
     map_t *map, *prev, *tmp;
     void *result;
     result = NULL;
     prev = NULL;
     for(map = m; map !=  NULL; map = map->next) {
-        if(map->name && strcmp(name, map->name) == 0) {
+        if(map->key && strcmp(key, map->key) == 0) {
             result = map->value;
             if(map == m) {
                 if(map->next == NULL) {
-                    free(map->name);
-                    map->name = NULL;
+                    free(map->key);
+                    map->key = NULL;
                     map->value = NULL;
                 } else {
-                    free(map->name);
-                    map->name = map->next->name;
+                    free(map->key);
+                    map->key = map->next->key;
                     map->value = map->next->value;
                     tmp = map->next;
                     map->next = map->next->next;
@@ -146,11 +146,11 @@ void *map_pop(map_t *m, char *name) {
                 }
             } else if (map->next == NULL) {
                 prev->next = NULL;
-                free(map->name);
+                free(map->key);
                 free(map);
             } else {
                 prev->next = map->next;
-                free(map->name);
+                free(map->key);
                 free(map);
             }
             break;
@@ -161,10 +161,10 @@ void *map_pop(map_t *m, char *name) {
 }
 
 
-int map_has(map_t *m, char *name) {
+int map_has(map_t *m, char *key) {
     map_t *map;
     for(map = m; map != NULL; map = map->next) {
-        if(map->name && strcmp(name, map->name) == 0) {
+        if(map->key && strcmp(key, map->key) == 0) {
             return 1;
         }
     }
@@ -177,7 +177,7 @@ int map_len(map_t *m) {
     if(m == NULL) {
         return 0;
     }
-    if(m->name == NULL) {
+    if(m->key == NULL) {
         return 0;
     }
     counter = 1;

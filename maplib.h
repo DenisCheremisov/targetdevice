@@ -33,17 +33,17 @@
 
 typedef struct map_t {
    struct map_t *next;
-   char *name;
+   char *key;
    void *value;
 } map_t;
 
 
 map_t *map_create();
 void map_free(map_t *map);
-void map_set(map_t *m, char *name, void *value);
-void *map_get(map_t *m, char *name);
-void *map_pop(map_t *m, char *name);
+void map_set(map_t *m, char *key, void *value);
+void *map_get(map_t *m, char *key);
+void *map_pop(map_t *m, char *key);
 int map_len(map_t *m);
-int map_has(map_t *m, char *name);
+int map_has(map_t *m, char *key);
 
 #endif
