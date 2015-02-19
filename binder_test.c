@@ -6,12 +6,12 @@
 #include "binder.h"
 
 
-char* proper_handler(map_t *params) {
-    return "";
+work_result_t *proper_handler(map_t *params) {
+    return NULL;
 }
 
 
-int main(int argc, char **argv) {
+int test1() {
     map_t *conf, *handler_map;
     FILE *conf_file;
     handler_data_t *semantics;
@@ -73,7 +73,123 @@ int main(int argc, char **argv) {
     assert(check_bit("1") == 0);
     assert(check_bit("0") == 0);
 
-    printf("Success!\n");
+    return 0;
+}
 
+
+work_result_t *real_work(map_t *params) {
+    work_result_t *result;
+    double res = 0.0;
+    result = (work_result_t*)malloc(sizeof(work_result_t));
+    assert(result != NULL);
+    RESULT_SUCCESS(result, res, double);
+    return result;
+}
+
+
+work_result_t *real_error(map_t *params) {
+    work_result_t *result;
+    double res;
+    result = (work_result_t*)malloc(sizeof(work_result_t));
+    assert(result != NULL);
+    RESULT_ERROR(result);
+    return result;
+}
+
+
+int test2() {
+    map_t *conf, *handler_map;
+    FILE *conf_file;
+    handler_data_t *semantics;
+    types_t type;
+    call_handler_result_t *res;
+    request_t request;
+
+    conf_file = fopen("conf/test.yaml", "r");
+    if(conf_file == NULL) {
+        return -1;
+    }
+    conf = config_parse(conf_file);
+    fclose(conf_file);
+
+    handler_map = map_create();
+    if(handler_map == NULL) {
+        return -1;
+    }
+
+    handler_bind(handler_map, "line-set", real_error, conf);
+    handler_bind(handler_map, "adc-get", real_work, conf);
+
+    puts("Check on method not available error");
+    request.name = "adc-get1";
+    request.params = map_create();
+    res = handler_call(handler_map, &request);
+    assert(res->status == CALL_STATUS_ERROR);
+    assert(res->message != NULL);
+    printf("%s\n", res->message);
+    puts("Check passed");
+    free(res);
+
+    puts("\nCheck on params list mismatch");
+    request.name = "adc-get";
+    res = handler_call(handler_map, &request);
+    assert(res->status == CALL_STATUS_ERROR);
+    assert(res->message != NULL);
+    printf("%s\n", res->message);
+    puts("Check passed");
+    free(res);
+
+    puts("\nCheck on wrong parameter type");
+    map_set(request.params, "channel", strdup("a"));
+    res = handler_call(handler_map, &request);
+    assert(res->status == CALL_STATUS_ERROR);
+    assert(res->message != NULL);
+    printf("%s\n", res->message);
+    puts("Check passed");
+    free(res);
+
+    puts("\nCheck on success");
+    map_set(request.params, "channel", strdup("1"));
+    res = handler_call(handler_map, &request);
+    assert(res->status == CALL_STATUS_SUCCESS);
+    assert(res->message == NULL);
+    printf("Return: %s\n", res->value);
+    puts("Check passed");
+    free(res);
+
+    puts("\nCheck on wrong value parameter");
+    request.name = "line-set";
+    map_pop(request.params, "channel");
+    map_set(request.params, "lineno", strdup("1"));
+    map_set(request.params, "value", strdup("2"));
+    res = handler_call(handler_map, &request);
+    assert(res->status == CALL_STATUS_ERROR);
+    assert(res->message != NULL);
+    printf("%s\n", res->message);
+    puts("Check passed");
+    free(res);
+
+    puts("\nCheck on work error");
+    request.name = "line-set";
+    map_pop(request.params, "channel");
+    map_set(request.params, "lineno", strdup("1"));
+    map_set(request.params, "value", strdup("0"));
+    res = handler_call(handler_map, &request);
+    assert(res->status == CALL_STATUS_INTERNAL_ERROR);
+    assert(res->message == NULL);
+    puts("Check passed");
+    free(res);
+
+    return 0;
+}
+
+
+int main(int argc, char *argv) {
+    if(test1() < 0) {
+        return -1;
+    }
+    if(test2() < 0) {
+        return -1;
+    }
     return 0;
 }
