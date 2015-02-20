@@ -97,7 +97,7 @@ int port_talk(int fd, char *command, char *response) {
     if(command[0] != '$') {
         return -1;
     }
-    for(i=1; i < 100; i++) {
+    for(i = 1; i < 100; i++) {
         if(command[i] < 32) {
             break;
         }
