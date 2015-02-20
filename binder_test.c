@@ -21,7 +21,7 @@ int test1() {
     if(conf_file == NULL) {
         return -1;
     }
-    conf = config_parse(conf_file);
+    conf = config_parse(conf_file)->rules;
     fclose(conf_file);
     assert(map_len(conf) == 5);
 
@@ -109,7 +109,7 @@ int test2() {
     if(conf_file == NULL) {
         return -1;
     }
-    conf = config_parse(conf_file);
+    conf = config_parse(conf_file)->rules;
     fclose(conf_file);
 
     handler_map = map_create();

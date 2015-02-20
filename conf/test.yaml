@@ -1,24 +1,32 @@
-is-connected: # $KE
-    return: bit
+connection:
+    host: localhost
+    port: 20001
+    certificate: certificate.pem
+    identity: client_001
 
-relay-set: # $KE,REL,<ReleNumber - port>,<Value - value>
-    params:
-        port: integer
-        value: bit
-    return: bit
 
-line-get: # $KE,RD,<LineNumber - lineno>
-    params:
-        lineno: integer
-    return: bit
+rules:
+    is-connected: # $KE
+        return: bit
 
-line-set: # $KE,RD,<LineNumber - lineno>,<Value - value>
-    params:
-        lineno: integer
-        value: bit
-    return: bit
+    relay-set: # $KE,REL,<ReleNumber - port>,<Value - value>
+        params:
+            port: integer
+            value: bit
+        return: bit
 
-adc-get: # $KE,ADC,<ChannelNumber - channel>
-    params:
-        channel: integer
-    return: float
+    line-get: # $KE,RD,<LineNumber - lineno>
+        params:
+            lineno: integer
+        return: bit
+
+    line-set: # $KE,RD,<LineNumber - lineno>,<Value - value>
+        params:
+            lineno: integer
+            value: bit
+        return: bit
+
+    adc-get: # $KE,ADC,<ChannelNumber - channel>
+        params:
+            channel: integer
+        return: float

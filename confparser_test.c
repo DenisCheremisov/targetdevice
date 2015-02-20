@@ -5,23 +5,26 @@
 #include "confparser.h"
 
 int test1(void) {
-    map_t *res;
+    map_t *rules;
+    connection_t *connection;
+    config_t *config;
     rule_t *rule;
     char *param;
     FILE *fh = fopen("conf/test.yaml", "r");
     if(fh == NULL)
         fputs("Failed to open file!\n", stderr);
-    res = config_parse(fh);
+    config = config_parse(fh);
+    rules = config->rules;
     fclose(fh);
 
-    rule = map_get(res, "is-connected");
+    rule = map_get(rules, "is-connected");
 
     assert(rule != NULL);
     assert((types_t)rule->ret_type == TYPE_BIT);
     map_len(rule->params);
     assert(map_len(rule->params) == 0);
 
-    rule = map_get(res, "relay-set");
+    rule = map_get(rules, "relay-set");
     assert(rule != NULL);
     assert((types_t)rule->ret_type == TYPE_BIT);
     param = map_get(rule->params, "port");
@@ -30,14 +33,14 @@ int test1(void) {
     assert((types_t)param == TYPE_BIT);
     assert(map_len(rule->params) == 2);
 
-    rule = map_get(res, "line-get");
+    rule = map_get(rules, "line-get");
     assert(rule != NULL);
     assert((types_t)rule->ret_type == TYPE_BIT);
     param = map_get(rule->params, "lineno");
     assert((types_t)param == TYPE_INTEGER);
     assert(map_len(rule->params) == 1);
 
-    rule = map_get(res, "line-set");
+    rule = map_get(rules, "line-set");
     assert(rule != NULL);
     assert((types_t)rule->ret_type == TYPE_BIT);
     param = map_get(rule->params, "lineno");
@@ -46,14 +49,22 @@ int test1(void) {
     assert((types_t)param == TYPE_BIT);
     assert(map_len(rule->params) == 2);
 
-    rule = map_get(res, "adc-get");
+    rule = map_get(rules, "adc-get");
     assert(rule != NULL);
     assert((types_t)rule->ret_type == TYPE_FLOAT);
     param = map_get(rule->params, "channel");
     assert((types_t)param == TYPE_INTEGER);
     assert(map_len(rule->params) == 1);
 
-    assert(map_len(res) == 5);
+    assert(map_len(rules) == 5);
+
+
+    // Connection
+    connection = config->connection;
+    assert(strcmp(connection->host, "localhost") == 0);
+    assert(connection->port == 20001);
+    assert(strcmp(connection->certificate, "certificate.pem") == 0);
+    assert(strcmp(connection->identity, "client_001") == 0);
 
     printf("conf/test.yaml config parsed successfuly\n");
 
