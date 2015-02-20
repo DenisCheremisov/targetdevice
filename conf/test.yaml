@@ -1,7 +1,6 @@
 connection:
     host: localhost
     port: 20001
-    certificate: certificate.pem
     identity: client_001
 
 

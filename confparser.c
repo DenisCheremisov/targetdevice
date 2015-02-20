@@ -180,7 +180,6 @@ connection_t *parse_connection_body(yaml_parser_t *parser) {
     char *value, *num, *tmp;
     int host_defined,
         port_defined,
-        certificate_defined,
         identity_defined;
     int number;
 
@@ -192,7 +191,7 @@ connection_t *parse_connection_body(yaml_parser_t *parser) {
     lexem_proceed(parser, &event);
     LEXEM_TYPE_CHECK(event, YAML_MAPPING_START_EVENT, "Connection mapping expected");
 
-    host_defined = port_defined = certificate_defined = identity_defined = 0;
+    host_defined = port_defined = identity_defined = 0;
     while(1) {
         lexem_proceed(parser, &event);
         if(event.type == YAML_MAPPING_END_EVENT) {
@@ -223,15 +222,6 @@ connection_t *parse_connection_body(yaml_parser_t *parser) {
             }
             result->port = number;
             port_defined = 1;
-        } else if(strcmp(value, "certificate") == 0) {
-            if(certificate_defined) {
-                something_went_wrong(&event, "Duplicate certificate definition");
-            }
-            result->certificate = read_scalar(parser);
-            if(result->certificate == NULL) {
-                something_went_wrong(&event, "Certificate file path expected");
-            }
-            certificate_defined = 1;
         } else if(strcmp(value, "identity") == 0) {
             if(identity_defined) {
                 something_went_wrong(&event, "Duplicate identity definition");
@@ -247,7 +237,6 @@ connection_t *parse_connection_body(yaml_parser_t *parser) {
     }
     if(!host_defined) something_went_wrong(&event, "Host not defined");
     if(!port_defined) something_went_wrong(&event, "Port not defined");
-    if(!certificate_defined) something_went_wrong(&event, "Certificate file path not defined");
     if(!identity_defined) something_went_wrong(&event, "Identity string is not defined");
     return result;
 }

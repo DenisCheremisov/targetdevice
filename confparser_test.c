@@ -63,7 +63,6 @@ int test1(void) {
     connection = config->connection;
     assert(strcmp(connection->host, "localhost") == 0);
     assert(connection->port == 20001);
-    assert(strcmp(connection->certificate, "certificate.pem") == 0);
     assert(strcmp(connection->identity, "client_001") == 0);
 
     printf("conf/test.yaml config parsed successfuly\n");

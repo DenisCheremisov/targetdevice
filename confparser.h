@@ -20,7 +20,6 @@ typedef struct {
 typedef struct {
     char *host;
     int port;
-    char *certificate;
     char *identity;
 } connection_t;
 
