@@ -187,3 +187,30 @@ int map_len(map_t *m) {
     }
     return counter;
 }
+
+
+map_iter_t *map_iter(map_t *map) {
+    map_iter_t *result;
+    result = (map_iter_t*)malloc(sizeof(map_iter_t));
+    if(result == NULL) {
+        unhandled_error();
+    }
+    result->map = map;
+    return result;
+}
+
+
+map_item_t *map_iter_next(map_iter_t *iter) {
+    map_item_t *result;
+    if(iter->map == NULL || iter->map->key == NULL) {
+        return NULL;
+    }
+    result = (map_item_t*)malloc(sizeof(map_item_t));
+    if(result == NULL) {
+        unhandled_error();
+    }
+    result->key = iter->map->key;
+    result->value = iter->map->value;
+    iter->map = iter->map->next;
+    return result;
+}

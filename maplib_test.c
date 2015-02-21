@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include "maplib.h"
 
@@ -7,20 +8,45 @@ int if_theres_a_key(map_t *map, char *key) {
 
 }
 
+#define LENGTH 7
+
 
 int main(int argc, char **argv) {
     map_t *map;
+    map_iter_t *iter;
+    map_item_t *item;
     char *res;
-    int check;
+    int check, i;
+
+    char *keys[LENGTH] = {
+        "foo", "tom", "adam", "chip", "good", "poor", "chaos"
+    };
+    char *values[LENGTH] = {
+        "bar", "jerry", "eva", "dale", "evil", "rich", "order"
+    };
+    int item_checked[LENGTH];
 
     map = map_create();
-    map_set(map, "foo", "bar");
-    map_set(map, "tom", "jerry");
-    map_set(map, "adam", "eva");
-    map_set(map, "chip", "dale");
-    map_set(map, "good", "evil");
-    map_set(map, "poor", "rich");
-    map_set(map, "chaos", "order");
+    for(i = 0; i < LENGTH; i++) {
+        map_set(map, keys[i], values[i]);
+        item_checked[i] = 0;
+    }
+
+    // Check iterator
+    iter = map_iter(map);
+    while(item = map_iter_next(iter), item != NULL) {
+        for(i = 0; i < LENGTH; i++) {
+            if(strcmp(item->key, keys[i]) == 0) {
+                assert(strcmp(item->value, (char*)values[i]) == 0);
+                item_checked[i] = 1;
+            }
+        }
+        free(item);
+    }
+    free(iter);
+    for(i = 0; i < LENGTH; i++) {
+        assert(item_checked[i] == 1);
+    }
 
     check =
         map_has(map, "foo") &&

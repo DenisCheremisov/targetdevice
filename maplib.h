@@ -38,6 +38,17 @@ typedef struct map_t {
 } map_t;
 
 
+typedef struct {
+    map_t *map;
+} map_iter_t;
+
+
+typedef struct {
+    char *key;
+    void *value;
+} map_item_t;
+
+
 map_t *map_create();
 void map_free(map_t *map);
 void map_set(map_t *m, char *key, void *value);
@@ -45,5 +56,8 @@ void *map_get(map_t *m, char *key);
 void *map_pop(map_t *m, char *key);
 int map_len(map_t *m);
 int map_has(map_t *m, char *key);
+
+map_iter_t *map_iter(map_t *m);
+map_item_t *map_iter_next(map_iter_t *iter);
 
 #endif
