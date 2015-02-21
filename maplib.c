@@ -44,7 +44,7 @@ map_t *map_create() {
     map_t *m;
     m = (map_t *)malloc(sizeof(map_t));
     if(!m)
-        return NULL;
+        unhandled_error();
     m->key = NULL;
     m->value = NULL;
     m->next = NULL;
@@ -53,7 +53,7 @@ map_t *map_create() {
 
 
 void map_free(map_t *map) {
-    if(!map)
+    if(map == NULL)
         return;
 
     map_t *m,  *mp;
