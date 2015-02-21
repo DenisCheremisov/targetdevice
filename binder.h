@@ -27,6 +27,7 @@ typedef struct {
 typedef struct {
     map_t *params;
     char *name;
+    char *request_id;
 } request_t;
 
 

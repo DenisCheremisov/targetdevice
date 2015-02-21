@@ -19,6 +19,9 @@ maplib.o: maplib.c
 binder.o: binder.c
 		$(COMPILE) -c binder.c
 
+processors.o: processors.c
+		$(COMPILE) -c processors.c
+
 clean:
 		rm -f *.o targetdevice confparser_test maplib_test binder_test
 
@@ -35,3 +38,6 @@ maplib_test: maplib.o maplib_test.c
 
 binder_test: maplib.o confparser.o binder.o binder_test.c
 		$(COMPILE) -o binder_test maplib.o confparser.o binder.o binder_test.c -lyaml
+
+processors_test: maplib.o processors.o processors_test.c
+		$(COMPILE) -o processors_test maplib.o processors.o processors_test.c
