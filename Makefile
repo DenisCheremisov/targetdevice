@@ -22,8 +22,11 @@ binder.o: binder.c
 processors.o: processors.c
 		$(COMPILE) -c processors.c
 
+network.o: network.c
+		$(COMPILE) -c network.c
+
 clean:
-		rm -f *.o targetdevice confparser_test maplib_test binder_test
+		rm -f *.o targetdevice *_test
 
 
 # This is for test purposes only

@@ -77,7 +77,7 @@ ssl_connection_t *ssl_connect(connection_t *config) {
         perror("Connect failed");
     }
 
-    return c;
+    return conn;
 }
 
 
@@ -92,7 +92,7 @@ void ssl_disconnect(ssl_connection_t *conn) {
     if(conn->ssl_context) {
         SSL_CTX_free(conn->ssl_context);
     }
-    free(c);
+    free(conn);
 }
 
 
