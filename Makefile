@@ -44,3 +44,6 @@ binder_test: maplib.o confparser.o binder.o binder_test.c
 
 processors_test: maplib.o processors.o processors_test.c
 		$(COMPILE) -o processors_test maplib.o processors.o processors_test.c
+
+network_test: network.o maplib.o confparser.o network_test.c
+		$(COMPILE) -o network_test network.o maplib.o confparser.o network_test.c -lcrypto -lssl -lyaml

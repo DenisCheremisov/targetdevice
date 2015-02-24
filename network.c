@@ -106,9 +106,9 @@ char *ssl_read(ssl_connection_t *conn) {
         while(1) {
             if(!rc) {
                 rc = (char*)malloc(read_size * sizeof(char) + 1);
+                rc[0] = '\0';
             } else {
-                rc = (char*)realloc(rc,(count + 1) *
-                                    read_size * sizeof(char) + 1);
+                rc = (char*)realloc(rc,(count + 1)*read_size*sizeof(char) + 1);
             }
 
             received = SSL_read(conn->ssl_handle, buffer, read_size);
@@ -129,8 +129,10 @@ char *ssl_read(ssl_connection_t *conn) {
 }
 
 
-char *ssl_write(ssl_connection_t *conn, char *data, int len) {
+void ssl_write(ssl_connection_t *conn, char *data, int len) {
     if (conn) {
-        SSL_write (conn->ssl_handle, data, len);
+        if(SSL_write(conn->ssl_handle, data, len) != len) {
+            perror("SSL: failed to write");
+        }
     }
 }

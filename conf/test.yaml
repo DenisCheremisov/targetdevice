@@ -1,6 +1,6 @@
 connection:
     host: localhost
-    port: 20001
+    port: 10023
     identity: client_001
 
 
