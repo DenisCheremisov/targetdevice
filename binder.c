@@ -13,7 +13,6 @@ void handler_bind(map_t *handler_map, char *handler_name, handler_t handler,
     value = (rule_t*)map_pop(rules, handler_name);
     if(value == NULL) {
         fprintf(stderr, "No such handler in config: %s\n", handler_name);
-        free(value);
         exit(EXIT_FAILURE);
     }
 

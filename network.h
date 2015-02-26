@@ -13,7 +13,7 @@ typedef struct {
 } ssl_connection_t;
 
 
-ssl_connection_t *ssl_connect (connection_t *config);
+ssl_connection_t *ssl_connect (connection_rules_t *config);
 void ssl_disconnect(ssl_connection_t *conn);
 char *ssl_read(ssl_connection_t *conn);
 void ssl_write(ssl_connection_t *conn, char *text, int len);

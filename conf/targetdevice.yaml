@@ -1,0 +1,14 @@
+connection:
+    host: localhost
+    port: 10023
+    identity: client_001
+
+
+daemon:
+    logfile: targetdevice.log
+    pidfile: targetdevice.pid
+
+
+rules:
+    is-connected: # $KE
+        return: bit

@@ -16,7 +16,7 @@
 #include "network.h"
 
 
-int tcp_connect(connection_t *config) {
+int tcp_connect(connection_rules_t *config) {
     int error, handle;
     struct hostent *host;
     struct sockaddr_in server;
@@ -44,7 +44,7 @@ int tcp_connect(connection_t *config) {
 }
 
 
-ssl_connection_t *ssl_connect(connection_t *config) {
+ssl_connection_t *ssl_connect(connection_rules_t *config) {
     ssl_connection_t *conn;
 
     conn = (ssl_connection_t*)malloc(sizeof(ssl_connection_t));

@@ -132,27 +132,27 @@ char* command_format(char *command) {
 }
 
 
-int main(int argc, char **argv) {
-    char buf[256];
-    char *command = "$KE\r\n";
-    char *tmp;
-    int fd, res;
+/* int main(int argc, char **argv) { */
+/*     char buf[256]; */
+/*     char *command = "$KE\r\n"; */
+/*     char *tmp; */
+/*     int fd, res; */
 
-    fd = port_open("/dev/usb/tts/0");
-    if(fd == 0) {
-        return -1;
-    }
-    res = port_talk(fd, command, buf);
-    if(res == 0) {
-        tmp = command_format(command);
-        if(tmp != NULL) {
-            printf("Result: %s -> %s\n", tmp, buf);
-            free(tmp);
-        } else {
-            puts("-------------------\n");
-            printf("Command: %s", command);
-            printf("Reply: %s\n", buf);
-        }
-    }
-    return 0;
-}
+/*     fd = port_open("/dev/usb/tts/0"); */
+/*     if(fd == 0) { */
+/*         return -1; */
+/*     } */
+/*     res = port_talk(fd, command, buf); */
+/*     if(res == 0) { */
+/*         tmp = command_format(command); */
+/*         if(tmp != NULL) { */
+/*             printf("Result: %s -> %s\n", tmp, buf); */
+/*             free(tmp); */
+/*         } else { */
+/*             puts("-------------------\n"); */
+/*             printf("Command: %s", command); */
+/*             printf("Reply: %s\n", buf); */
+/*         } */
+/*     } */
+/*     return 0; */
+/* } */

@@ -67,10 +67,17 @@ request_t *parse_line(char **request, parse_line_status_t *status) {
 }
 
 
+void free_request_memory(request_t *req) {
+    free(req->request_id);
+    free(req->name);
+    map_free(req->params);
+}
+
+
 processored_request_t requested_data_parse(char *request) {
     processored_request_t status_res;
     map_t *result;
-    char *cursor, *line, *start;
+    char *cursor, *line, *start, *line_copy;
     request_t *req;
     int line_no;
     parse_line_status_t status;
@@ -78,20 +85,23 @@ processored_request_t requested_data_parse(char *request) {
 
     result = map_create();
     line_no = 1;
+    status_res.value = result;
     do {
         line = strsep(&request, "\n");
-
+        line_copy = strdup(line);
         start = line;
         req = parse_line(&line, &status);
         if(status != PARSE_LINE_SUCCESS) {
             snprintf(message, 1023,
-                     "Parsing request error %d at line %d",
-                     status, line_no);
+                     "Parsing request error %d at line %d: %s",
+                     status, line_no, line_copy);
             status_res.status = PROCESSING_REQUEST_ERROR;
             status_res.message = message;
+            free(line_copy);
             return status_res;
         }
         line_no++;
+        free(line_copy);
         map_set(result, req->request_id, req);
     } while(request != NULL && strlen(request) > 0);
     status_res.message = NULL;
