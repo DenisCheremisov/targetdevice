@@ -105,11 +105,11 @@ char* error_buffer(char *msg) {
 call_handler_result_t* handler_call(map_t *handler_map, request_t *request) {
     call_handler_result_t *result;
     types_t type;
-    map_t *iter;
+    map_iter_t *iter;
+    map_item_t *item;
     handler_data_t *handler_data;
     char *value, *arg, *param_value, *message;
     work_result_t *handler_result;
-    map_t *call_params;
     void *call_value, *tmp_value;
     int len, tmp_int;
     double tmp_float;
@@ -125,72 +125,58 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request) {
     if(handler_data == NULL) {
         message = error_buffer(NULL);
         snprintf(message, ERROR_BUFFER_LENGTH - 1, "Method %s is not defined", request->name);
-        goto does_not_need_to_clean;
+        goto error_status;
     }
     if(map_len(handler_data->params) != map_len(request->params)) {
         message = error_buffer("Parameters do not satisfy handler definition");
-        goto does_not_need_to_clean;
+        goto error_status;
     }
 
 
-    call_params = map_create();
-    for(iter = request->params; iter != NULL && iter->key != NULL; iter = iter->next) {
-        param = map_get(handler_data->params, iter->key);
+    // Check parameter type
+    iter = map_iter(request->params);
+    while(item = map_iter_next(iter), item != NULL) {
+        param = map_get(handler_data->params, item->key);
         if(param == NULL) {
             message = error_buffer(NULL);
             snprintf(message, ERROR_BUFFER_LENGTH - 1,
-                     "Parameter %s is not supported", iter->key);
-            goto need_to_clean;
+                     "Parameter %s is not supported", item->key);
+            goto error_status;
         }
-        param_value = (char*)iter->value;
+        param_value = (char*)item->value;
         switch((types_t)param) {
         case TYPE_FLOAT:
             if(check_float(param_value) != 0) {
                 message = error_buffer(NULL);
                 snprintf(message, ERROR_BUFFER_LENGTH - 1,
-                         "Parameter %s value is not a float, got \"%s\" instead", iter->key,
+                         "Parameter %s value is not a float, got \"%s\" instead", item->key,
                          param_value);
-                goto need_to_clean;
+                goto error_status;
             }
-            len = sizeof(double);
-            tmp_float = atof(param_value);
-            call_value = (void*)&tmp_float;
             break;
         case TYPE_INTEGER:
             if(check_integer(param_value) != 0) {
                 message = error_buffer(NULL);
                 snprintf(message, ERROR_BUFFER_LENGTH - 1,
-                         "Parameter %s value is not an integer, got \"%s\" instead", iter->key,
+                         "Parameter %s value is not an integer, got \"%s\" instead", item->key,
                          param_value);
-                goto need_to_clean;
+                goto error_status;
             }
-            len = sizeof(int);
-            tmp_int = atol(param_value);
-            call_value = (void*)&tmp_int;
             break;
         case TYPE_BIT:
             if(check_bit(param_value) != 0) {
                 message = error_buffer(NULL);
                 snprintf(message, ERROR_BUFFER_LENGTH - 1,
                          "Parameter %s value is not a bit (i.e. either 0 or 1), got \"%s\" instead",
-                         iter->key, param_value);
-                goto need_to_clean;
+                         item->key, param_value);
+                goto error_status;
             }
-            len = sizeof(int);
-            tmp_int = atol(param_value);
-            call_value = (void*)&tmp_int;
             break;
         }
-        tmp_value = malloc(len);
-        if(tmp_value == NULL) {
-            exit(EXIT_FAILURE);
-        }
-        memcpy(tmp_value, (void*)call_value, len);
-        map_set(call_params, iter->key, (void*)tmp_value);
     }
 
     // Now call for method
-    handler_result = handler_data->handler(call_params);
+    handler_result = handler_data->handler(request->params);
     if(handler_result->status == WORKER_STATUS_ERROR) {
         result->status = CALL_STATUS_INTERNAL_ERROR;
     } else {
@@ -208,14 +194,11 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request) {
         }
     }
 
-    map_free(call_params);
     free(handler_result);
     result->message = NULL;
     return result;
 
- need_to_clean:
-    map_free(call_params);
- does_not_need_to_clean:
+ error_status:
     result->status = CALL_STATUS_ERROR;
     result->message = message;
     return result;
