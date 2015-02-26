@@ -21,12 +21,19 @@ typedef struct {
     char *host;
     int port;
     char *identity;
-} connection_t;
+} connection_rules_t;
+
+
+typedef struct {
+    char *pidfile;
+    char *logfile;
+} daemon_rules_t;
 
 
 typedef struct {
     map_t *rules;
-    connection_t *connection;
+    connection_rules_t *connection;
+    daemon_rules_t *daemon;
 } config_t;
 
 

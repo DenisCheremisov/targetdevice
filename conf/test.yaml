@@ -4,6 +4,11 @@ connection:
     identity: client_001
 
 
+daemon:
+    logfile: /var/log/targetdevice.log
+    pidfile: /var/pids/targetdevice.pid
+
+
 rules:
     is-connected: # $KE
         return: bit

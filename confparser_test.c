@@ -6,8 +6,9 @@
 
 int test1(void) {
     map_t *rules;
-    connection_t *connection;
+    connection_rules_t *connection;
     config_t *config;
+    daemon_rules_t *daemon;
     rule_t *rule;
     char *param;
     FILE *fh = fopen("conf/test.yaml", "r");
@@ -62,8 +63,13 @@ int test1(void) {
     // Connection
     connection = config->connection;
     assert(strcmp(connection->host, "localhost") == 0);
-    assert(connection->port == 20001);
+    assert(connection->port == 10023);
     assert(strcmp(connection->identity, "client_001") == 0);
+
+    // Daemon rules
+    daemon = config->daemon;
+    assert(strcmp(daemon->logfile, "/var/log/targetdevice.log") == 0);
+    assert(strcmp(daemon->pidfile, "/var/pids/targetdevice.pid") == 0);
 
     printf("conf/test.yaml config parsed successfuly\n");
 

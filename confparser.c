@@ -173,16 +173,16 @@ char* read_scalar(yaml_parser_t *parser) {
 }
 
 
-connection_t *parse_connection_body(yaml_parser_t *parser) {
+connection_rules_t *parse_connection_body(yaml_parser_t *parser) {
     yaml_event_t event;
-    connection_t *result;
+    connection_rules_t *result;
     char *value, *num, *tmp;
     int host_defined,
         port_defined,
         identity_defined;
     int number;
 
-    result = (connection_t*)malloc(sizeof(connection_t));
+    result = (connection_rules_t*)malloc(sizeof(connection_rules_t));
     if(result == NULL) {
         error_raise();
     }
@@ -190,7 +190,7 @@ connection_t *parse_connection_body(yaml_parser_t *parser) {
     lexem_proceed(parser, &event);
     LEXEM_TYPE_CHECK(event, YAML_MAPPING_START_EVENT, "Connection mapping expected");
 
-    host_defined = port_defined = identity_defined = 0;
+    host_defined = port_defined = 0;
     while(1) {
         lexem_proceed(parser, &event);
         if(event.type == YAML_MAPPING_END_EVENT) {
@@ -219,6 +219,7 @@ connection_t *parse_connection_body(yaml_parser_t *parser) {
             if((tmp != NULL && *tmp != '\0')|| (unsigned int)number > 0xffff) {
                 something_went_wrong(&event, "Wrong port number");
             }
+            free(num);
             result->port = number;
             port_defined = 1;
         } else if(strcmp(value, "identity") == 0) {
@@ -241,11 +242,62 @@ connection_t *parse_connection_body(yaml_parser_t *parser) {
 }
 
 
+daemon_rules_t *parse_daemon_body(yaml_parser_t *parser) {
+    yaml_event_t event;
+    daemon_rules_t *result;
+    char *value;
+    int log_file_defined, pid_file_defined;
+
+    result = (daemon_rules_t*)malloc(sizeof(daemon_rules_t));
+    if(result == NULL) {
+        error_raise();
+    }
+
+    lexem_proceed(parser, &event);
+    LEXEM_TYPE_CHECK(event, YAML_MAPPING_START_EVENT, "Daemon rules expected");
+
+    log_file_defined = pid_file_defined = 0;
+    while(1) {
+        lexem_proceed(parser, &event);
+        if(event.type == YAML_MAPPING_END_EVENT) {
+            break;
+        }
+        LEXEM_TYPE_CHECK(event, YAML_SCALAR_EVENT, "Daemon rules expected");
+        value = event.data.scalar.value;
+        if(strcmp(value, "logfile") == 0) {
+            if(log_file_defined) {
+                something_went_wrong(&event, "Duplicate logfile definition");
+            }
+            result->logfile = read_scalar(parser);
+            if(result->logfile == NULL) {
+                something_went_wrong(&event, "Log file name expected");
+            }
+            log_file_defined = 1;
+        } else if(strcmp(value, "pidfile") == 0) {
+            if(pid_file_defined) {
+                something_went_wrong(&event, "Duplicate pid file definition");
+            }
+            result->pidfile = read_scalar(parser);
+            if(result->pidfile == NULL) {
+                something_went_wrong(&event, "Pid file name expected");
+            }
+            pid_file_defined = 1;
+        } else {
+            something_went_wrong(&event, "Wrong identifier");
+        }
+    }
+    if(!log_file_defined) something_went_wrong(&event, "Log file name not defined");
+    if(!pid_file_defined) something_went_wrong(&event, "Pid file name not defined");
+    return result;
+}
+
+
+
 config_t *parse_all_config(yaml_parser_t *parser) {
     yaml_event_t event;
     config_t *result;
     char *value;
-    int rules_defined, connection_defined;
+    int rules_defined, connection_defined, daemon_defined;
 
     result = (config_t*)malloc(sizeof(config_t));
     if(result == NULL) {
@@ -255,7 +307,7 @@ config_t *parse_all_config(yaml_parser_t *parser) {
     lexem_proceed(parser, &event);
     LEXEM_TYPE_CHECK(event, YAML_MAPPING_START_EVENT, "Rules mapping expected");
 
-    rules_defined = connection_defined = 0;
+    rules_defined = connection_defined = daemon_defined = 0;
     while(1) {
         lexem_proceed(parser, &event);
         if(event.type == YAML_MAPPING_END_EVENT) {
@@ -275,10 +327,17 @@ config_t *parse_all_config(yaml_parser_t *parser) {
             }
             result->rules = parse_rules_body(parser);
             rules_defined = 1;
+        } else if(strcmp(value, "daemon") == 0) {
+            if(daemon_defined) {
+                something_went_wrong(&event, "Duplicate daemon rules definition");
+            }
+            result->daemon = parse_daemon_body(parser);
+            daemon_defined = 1;
         }
     }
     if(!connection_defined) something_went_wrong(&event, "Connection is not defined");
     if(!rules_defined) something_went_wrong(&event, "Rules are not defined");
+    if(!daemon_defined) something_went_wrong(&event, "Daemon rules are not defined");
     return result;
 }
 
