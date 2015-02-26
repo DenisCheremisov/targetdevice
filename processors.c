@@ -35,11 +35,12 @@ request_t *parse_line(char **request, parse_line_status_t *status) {
     }
     result->request_id = strdup(token);
 
-    result->params = NULL;
+    params = result->params = map_create();
     // Get method name
     token = strsep(request, ":");
     if(strlen(token) < 1) {
         *status = PARSE_LINE_METHOD_NAME_EXPECTED;
+        map_free(result->params);
         free(result);
         return NULL;
     }
@@ -48,7 +49,6 @@ request_t *parse_line(char **request, parse_line_status_t *status) {
         return result;
     }
 
-    params = map_create();
     // Get parameters
     do {
         token = strsep(request, ":");
@@ -62,7 +62,6 @@ request_t *parse_line(char **request, parse_line_status_t *status) {
         map_set(params, param, strdup(value));
     } while(*request != NULL);
 
-    result->params = params;
     return result;
 }
 
@@ -96,7 +95,7 @@ processored_request_t requested_data_parse(char *request) {
                      "Parsing request error %d at line %d: %s",
                      status, line_no, line_copy);
             status_res.status = PROCESSING_REQUEST_ERROR;
-            status_res.message = message;
+            status_res.message = strdup(message);
             free(line_copy);
             return status_res;
         }
@@ -106,6 +105,5 @@ processored_request_t requested_data_parse(char *request) {
     } while(request != NULL && strlen(request) > 0);
     status_res.message = NULL;
     status_res.status = PROCESSING_REQUEST_SUCCESS;
-    status_res.value = result;
     return status_res;
 }

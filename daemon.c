@@ -27,13 +27,28 @@ work_result_t *is_connected(map_t *params) {
 }
 
 
+work_result_t *adc_get(map_t *params) {
+    work_result_t *result;
+    double resp;
+    result = (work_result_t*)malloc(sizeof(work_result_t));
+    if(result == NULL) {
+        perror("");
+        exit(EXIT_FAILURE);
+    }
+    resp = atol(map_get(params, "channel")) + 0.333;
+    RESULT_SUCCESS(result, resp, double);
+    return result;
+}
+
+
 #define BUF_LEN 512
 char *add_str(char *op1, char *op2) {
     char *res;
     if(op1 == NULL) {
         res = strdup(op2);
     } else {
-        res = (char*)realloc((void*)op1, strlen(op1) + strlen(op2) + 1);
+        res = (char*)malloc(strlen(op1) + strlen(op2) + 1);
+        res[0] = '\0';
         if(res != NULL) {
             strcpy(res, op1);
             strcat(res, op2);
@@ -56,6 +71,7 @@ map_t *bind_handlers(map_t *rules) {
     // Binding
     handler_map = map_create();
     handler_bind(handler_map, "is-connected", is_connected, rules);
+    handler_bind(handler_map, "adc-get", adc_get, rules);
 
     rules_iter = map_iter(rules);
     while(rules_item = map_iter_next(rules_iter), rules_item != NULL) {
@@ -121,7 +137,9 @@ void do_network_work(connection_rules_t *conn_rules, map_t *handlers) {
     }
     map_free(reqs.value);
 
-    puts(output);
+    if(reqs.message != NULL) {
+        free(reqs.message);
+    }
     ssl_write(conn, output, strlen(output) - 1);
 }
 
@@ -158,7 +176,7 @@ int main(int argc, char **argv) {
 
     handler_map = bind_handlers(config->rules);
 
-    if(!do_not_daemonize) {
+    if(0 /*!do_not_daemonize*/) {
         pidfile = config->daemon->pidfile;
         pfh = pidfile_open(pidfile, 0600, &otherpid);
         if(pfh == NULL) {

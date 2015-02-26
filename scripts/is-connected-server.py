@@ -7,6 +7,7 @@ import socket, ssl
 bindsocket = socket.socket()
 bindsocket.bind(('', 10023))
 bindsocket.listen(5)
+bindsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 
 def deal_with_client(connstream):
@@ -15,7 +16,10 @@ def deal_with_client(connstream):
     if data.rstrip().split(':')[0] != 'ready':
         response = '0:error-intro'
     else:
-        response = '0:is-connected'
+        response = '\n'.join([
+            '0:is-connected',
+            '1:adc-get:channel=12'
+            ])
     connstream.write(response)
     print connstream.read()
     return

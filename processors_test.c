@@ -31,7 +31,7 @@ int main() {
     assert(strcmp((char*)map_get(req->params, "value"), "1") == 0);
     req = (request_t*)map_get(reqs.value, "03");
     assert(strcmp(req->name, "is-connected") == 0);
-    assert(req->params == NULL);
+    assert(map_len(req->params) == 0);
     puts("Test OK\n");
 
     puts("Testing request_id error");
@@ -123,7 +123,7 @@ int main() {
     assert(strcmp((char*)map_get(req->params, "value"), "1") == 0);
     req = (request_t*)map_get(reqs.value, "03");
     assert(strcmp(req->name, "is-connected") == 0);
-    assert(req->params == NULL);
+    assert(map_len(req->params) == 0);
     req = (request_t*)map_get(reqs.value, "abyr");
     assert(strcmp(req->name, "valg") == 0);
     assert(map_len(req->params) == 1);

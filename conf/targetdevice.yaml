@@ -12,3 +12,8 @@ daemon:
 rules:
     is-connected: # $KE
         return: bit
+
+    adc-get: # $KE,ADC,<ChannelNumber - channel>
+        params:
+            channel: integer
+        return: float
