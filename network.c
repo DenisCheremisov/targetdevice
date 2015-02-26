@@ -46,35 +46,36 @@ int tcp_connect(connection_rules_t *config) {
 
 ssl_connection_t *ssl_connect(connection_rules_t *config) {
     ssl_connection_t *conn;
+    int socket;
+
+    socket = tcp_connect(config);
+    if(socket == 0) {
+        return NULL;
+    }
 
     conn = (ssl_connection_t*)malloc(sizeof(ssl_connection_t));
     conn->ssl_handle = NULL;
     conn->ssl_context = NULL;
+    conn->socket = socket;
+    SSL_load_error_strings();
+    SSL_library_init();
 
-    conn->socket = tcp_connect(config);
-    if(conn->socket) {
-        SSL_load_error_strings();
-        SSL_library_init();
+    conn->ssl_context = SSL_CTX_new(SSLv23_client_method());
+    if(conn->ssl_context == NULL) {
+        ERR_print_errors_fp(stderr);
+    }
 
-        conn->ssl_context = SSL_CTX_new(SSLv23_client_method());
-        if(conn->ssl_context == NULL) {
-            ERR_print_errors_fp(stderr);
-        }
+    conn->ssl_handle = SSL_new(conn->ssl_context);
+    if(conn->ssl_handle == NULL) {
+        ERR_print_errors_fp(stderr);
+    }
 
-        conn->ssl_handle = SSL_new(conn->ssl_context);
-        if(conn->ssl_handle == NULL) {
-            ERR_print_errors_fp(stderr);
-        }
+    if(!SSL_set_fd(conn->ssl_handle, conn->socket)) {
+        ERR_print_errors_fp(stderr);
+    }
 
-        if(!SSL_set_fd(conn->ssl_handle, conn->socket)) {
-            ERR_print_errors_fp(stderr);
-        }
-
-        if(SSL_connect(conn->ssl_handle) != 1) {
-            ERR_print_errors_fp(stderr);
-        }
-    }  else {
-        perror("Connect failed");
+    if(SSL_connect(conn->ssl_handle) != 1) {
+        ERR_print_errors_fp(stderr);
     }
 
     return conn;
