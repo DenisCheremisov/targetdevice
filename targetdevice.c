@@ -75,12 +75,12 @@ int port_open(char *portname) {
         portname = "/dev/usb/tts/0";
     }
     fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
-    if(fd < 0) {
+    if(fd <= 0) {
         fprintf(stderr, "cannot open serial port %s", portname);
         perror(" ");
         return 0;
     }
-    if(set_interface_attribs (fd, B115200, 0) < 0) { // set speed to 115,200 bps, 8n1 (no parity)
+    if(set_interface_attribs(fd, B115200, 0) < 0) { // set speed to 115,200 bps, 8n1 (no parity)
         return 0;
     }
     if(set_blocking(fd, 1) < 0) {// set no blocking
@@ -130,29 +130,3 @@ char* command_format(char *command) {
     result[pos - command] = 0;
     return result;
 }
-
-
-/* int main(int argc, char **argv) { */
-/*     char buf[256]; */
-/*     char *command = "$KE\r\n"; */
-/*     char *tmp; */
-/*     int fd, res; */
-
-/*     fd = port_open("/dev/usb/tts/0"); */
-/*     if(fd == 0) { */
-/*         return -1; */
-/*     } */
-/*     res = port_talk(fd, command, buf); */
-/*     if(res == 0) { */
-/*         tmp = command_format(command); */
-/*         if(tmp != NULL) { */
-/*             printf("Result: %s -> %s\n", tmp, buf); */
-/*             free(tmp); */
-/*         } else { */
-/*             puts("-------------------\n"); */
-/*             printf("Command: %s", command); */
-/*             printf("Reply: %s\n", buf); */
-/*         } */
-/*     } */
-/*     return 0; */
-/* } */
