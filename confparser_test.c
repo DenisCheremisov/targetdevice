@@ -70,6 +70,7 @@ int test1(void) {
     daemon = config->daemon;
     assert(strcmp(daemon->logfile, "/var/log/targetdevice.log") == 0);
     assert(strcmp(daemon->pidfile, "/var/pids/targetdevice.pid") == 0);
+    assert(strcmp(daemon->serial, "/dev/usb/tts/0") == 0);
 
     printf("conf/test.yaml config parsed successfuly\n");
 

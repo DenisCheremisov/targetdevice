@@ -27,6 +27,7 @@ typedef struct {
 typedef struct {
     char *pidfile;
     char *logfile;
+    char *serial;
 } daemon_rules_t;
 
 

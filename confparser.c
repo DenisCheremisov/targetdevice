@@ -246,7 +246,7 @@ daemon_rules_t *parse_daemon_body(yaml_parser_t *parser) {
     yaml_event_t event;
     daemon_rules_t *result;
     char *value;
-    int log_file_defined, pid_file_defined;
+    int log_file_defined, pid_file_defined, serial_defined;
 
     result = (daemon_rules_t*)malloc(sizeof(daemon_rules_t));
     if(result == NULL) {
@@ -256,7 +256,7 @@ daemon_rules_t *parse_daemon_body(yaml_parser_t *parser) {
     lexem_proceed(parser, &event);
     LEXEM_TYPE_CHECK(event, YAML_MAPPING_START_EVENT, "Daemon rules expected");
 
-    log_file_defined = pid_file_defined = 0;
+    log_file_defined = pid_file_defined = serial_defined = 0;
     while(1) {
         lexem_proceed(parser, &event);
         if(event.type == YAML_MAPPING_END_EVENT) {
@@ -282,12 +282,22 @@ daemon_rules_t *parse_daemon_body(yaml_parser_t *parser) {
                 something_went_wrong(&event, "Pid file name expected");
             }
             pid_file_defined = 1;
+        } else if(strcmp(value, "serial") == 0) {
+            if(serial_defined) {
+                something_went_wrong(&event, "Duplicate serial device definition");
+            }
+            result->serial = read_scalar(parser);
+            if(result->serial == NULL) {
+                something_went_wrong(&event, "Serial device name expected");
+            }
+            serial_defined = 1;
         } else {
             something_went_wrong(&event, "Wrong identifier");
         }
     }
     if(!log_file_defined) something_went_wrong(&event, "Log file name not defined");
     if(!pid_file_defined) something_went_wrong(&event, "Pid file name not defined");
+    if(!serial_defined) something_went_wrong(&event, "Serial file name not defined");
     return result;
 }
 
