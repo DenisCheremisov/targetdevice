@@ -9,6 +9,7 @@ daemon:
     pidfile: targetdevice.pid
     serial: /dev/usb/tts/0
 
+
 rules:
     is-connected: # $KE
         return: bit
