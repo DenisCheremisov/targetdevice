@@ -7,7 +7,7 @@ connection:
 daemon:
     logfile: targetdevice.log
     pidfile: targetdevice.pid
-
+    serial: /dev/usb/tts/0
 
 rules:
     is-connected: # $KE

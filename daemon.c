@@ -13,7 +13,7 @@
 #include "processors.h"
 
 
-work_result_t *is_connected(map_t *params) {
+work_result_t *is_connected(map_t *params, int serial) {
     work_result_t *result;
     int boolean;
     result = (work_result_t*)malloc(sizeof(work_result_t));
@@ -27,7 +27,7 @@ work_result_t *is_connected(map_t *params) {
 }
 
 
-work_result_t *adc_get(map_t *params) {
+work_result_t *adc_get(map_t *params, int serial) {
     work_result_t *result;
     double resp;
     result = (work_result_t*)malloc(sizeof(work_result_t));
@@ -86,7 +86,7 @@ map_t *bind_handlers(map_t *rules) {
 }
 
 
-void do_network_work(connection_rules_t *conn_rules, map_t *handlers) {
+void do_network_work(connection_rules_t *conn_rules, map_t *handlers, int serial) {
     ssl_connection_t *conn;
     char *response;
     processored_request_t reqs;
@@ -119,7 +119,7 @@ void do_network_work(connection_rules_t *conn_rules, map_t *handlers) {
     iter = map_iter(reqs.value);
     while(item = map_iter_next(iter), item != NULL) {
         req = item->value;
-        res = handler_call(handlers, req);
+        res = handler_call(handlers, req, serial);
         switch(res->status) {
         case CALL_STATUS_SUCCESS:
             snprintf(buf, 511, "%s:success:%s\n", item->key, res->value);
@@ -154,6 +154,7 @@ int main(int argc, char **argv) {
     map_t *handler_map;
     call_handler_result_t *res;
     int i, do_not_daemonize;
+    int serial;
 
     do_not_daemonize = 0;
     for(i = 1; i < argc; i++) {
@@ -175,6 +176,11 @@ int main(int argc, char **argv) {
     config = config_parse(config_fp);
 
     handler_map = bind_handlers(config->rules);
+
+    serial = port_open(config->daemon->serial);
+    if(serial == 0) {
+        exit(EXIT_FAILURE);
+    }
 
     if(0 /*!do_not_daemonize*/) {
         pidfile = config->daemon->pidfile;
@@ -214,9 +220,11 @@ int main(int argc, char **argv) {
 
 
     while(1) {
-        do_network_work(config->connection, handler_map);
+        do_network_work(config->connection, handler_map, serial);
         sleep(5);
     }
+
+    close(serial);
 
     return 0;
 }
