@@ -6,7 +6,7 @@
 #include "binder.h"
 
 
-work_result_t *proper_handler(map_t *params) {
+work_result_t *proper_handler(map_t *params, int serial) {
     return NULL;
 }
 
@@ -77,7 +77,7 @@ int test1() {
 }
 
 
-work_result_t *real_work(map_t *params) {
+work_result_t *real_work(map_t *params, int serial) {
     work_result_t *result;
     double res = 0.0;
     result = (work_result_t*)malloc(sizeof(work_result_t));
@@ -87,7 +87,7 @@ work_result_t *real_work(map_t *params) {
 }
 
 
-work_result_t *real_error(map_t *params) {
+work_result_t *real_error(map_t *params, int serial) {
     work_result_t *result;
     double res;
     result = (work_result_t*)malloc(sizeof(work_result_t));
@@ -123,7 +123,7 @@ int test2() {
     puts("Check on method not available error");
     request.name = "adc-get1";
     request.params = map_create();
-    res = handler_call(handler_map, &request);
+    res = handler_call(handler_map, &request, 0);
     assert(res->status == CALL_STATUS_ERROR);
     assert(res->message != NULL);
     printf("%s\n", res->message);
@@ -132,7 +132,7 @@ int test2() {
 
     puts("\nCheck on params list mismatch");
     request.name = "adc-get";
-    res = handler_call(handler_map, &request);
+    res = handler_call(handler_map, &request, 0);
     assert(res->status == CALL_STATUS_ERROR);
     assert(res->message != NULL);
     printf("%s\n", res->message);
@@ -141,7 +141,7 @@ int test2() {
 
     puts("\nCheck on wrong parameter type");
     map_set(request.params, "channel", strdup("a"));
-    res = handler_call(handler_map, &request);
+    res = handler_call(handler_map, &request, 0);
     assert(res->status == CALL_STATUS_ERROR);
     assert(res->message != NULL);
     printf("%s\n", res->message);
@@ -150,7 +150,7 @@ int test2() {
 
     puts("\nCheck on success");
     map_set(request.params, "channel", strdup("1"));
-    res = handler_call(handler_map, &request);
+    res = handler_call(handler_map, &request, 0);
     assert(res->status == CALL_STATUS_SUCCESS);
     assert(res->message == NULL);
     printf("Return: %s\n", res->value);
@@ -162,7 +162,7 @@ int test2() {
     map_pop(request.params, "channel");
     map_set(request.params, "lineno", strdup("1"));
     map_set(request.params, "value", strdup("2"));
-    res = handler_call(handler_map, &request);
+    res = handler_call(handler_map, &request, 0);
     assert(res->status == CALL_STATUS_ERROR);
     assert(res->message != NULL);
     printf("%s\n", res->message);
@@ -174,7 +174,7 @@ int test2() {
     map_pop(request.params, "channel");
     map_set(request.params, "lineno", strdup("1"));
     map_set(request.params, "value", strdup("0"));
-    res = handler_call(handler_map, &request);
+    res = handler_call(handler_map, &request, 0);
     assert(res->status == CALL_STATUS_INTERNAL_ERROR);
     assert(res->message == NULL);
     puts("Check passed");

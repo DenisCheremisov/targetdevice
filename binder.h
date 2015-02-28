@@ -13,7 +13,7 @@ typedef struct {
 } work_result_t;
 
 
-typedef work_result_t *(*handler_t)(map_t *params);
+typedef work_result_t *(*handler_t)(map_t *params, int serial);
 
 
 typedef struct {
@@ -57,6 +57,6 @@ typedef struct {
 
 
 void handler_bind(map_t *handler_map, char *handler_name, handler_t handler, map_t *rules);
-call_handler_result_t *handler_call(map_t *handler_map, request_t *request);
+call_handler_result_t *handler_call(map_t *handler_map, request_t *request, int serial);
 
 #endif

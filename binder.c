@@ -102,7 +102,7 @@ char* error_buffer(char *msg) {
 }
 
 
-call_handler_result_t* handler_call(map_t *handler_map, request_t *request) {
+call_handler_result_t* handler_call(map_t *handler_map, request_t *request, int serial) {
     call_handler_result_t *result;
     types_t type;
     map_iter_t *iter;
@@ -176,7 +176,9 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request) {
     }
 
     // Now call for method
-    handler_result = handler_data->handler(request->params);
+    handler_result = handler_data->handler(request->params, serial);
+
+
     if(handler_result->status == WORKER_STATUS_ERROR) {
         result->status = CALL_STATUS_INTERNAL_ERROR;
     } else {
