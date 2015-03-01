@@ -22,7 +22,6 @@ int test1(void) {
 
     assert(rule != NULL);
     assert((types_t)rule->ret_type == TYPE_BIT);
-    map_len(rule->params);
     assert(map_len(rule->params) == 0);
 
     rule = map_get(rules, "relay-set");
@@ -57,7 +56,12 @@ int test1(void) {
     assert((types_t)param == TYPE_INTEGER);
     assert(map_len(rule->params) == 1);
 
-    assert(map_len(rules) == 5);
+    rule = map_get(rules, "line-get-all");
+    assert(rule != NULL);
+    assert((types_t)rule->ret_type == TYPE_STRING);
+    assert(map_len(rule->params) == 0);
+
+    assert(map_len(rules) == 6);
 
 
     // Connection

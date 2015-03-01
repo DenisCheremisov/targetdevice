@@ -172,6 +172,14 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request, int 
                 goto error_status;
             }
             break;
+        case TYPE_STRING:
+            if(strlen(param_value) > 63) {
+                message = error_buffer(NULL);
+                snprintf(message, ERROR_BUFFER_LENGTH - 1,
+                         "Parameter %s value is too long, needs to be less than 64 bytes",
+                         item->key);
+                goto error_status;
+            }
         }
         free(item);
     }
@@ -195,6 +203,9 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request, int 
         case TYPE_BIT:
             sprintf(result->value, "%d", *(int*)handler_result->result);
             break;
+        case TYPE_STRING:
+            strncpy(result->value, (char*)handler_result->result, 63);
+            result->value[63] = '\0';
         }
     }
 

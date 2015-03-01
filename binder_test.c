@@ -23,7 +23,7 @@ int test1() {
     }
     conf = config_parse(conf_file)->rules;
     fclose(conf_file);
-    assert(map_len(conf) == 5);
+    assert(map_len(conf) == 6);
 
     handler_map = map_create();
     if(handler_map == NULL) {
@@ -32,11 +32,11 @@ int test1() {
 
     handler_bind(handler_map, "line-set", proper_handler, conf);
     assert(map_len(handler_map) == 1);
-    assert(map_len(conf) == 4);
+    assert(map_len(conf) == 5);
 
     handler_bind(handler_map, "adc-get", proper_handler, conf);
     assert(map_len(handler_map) == 2);
-    assert(map_len(conf) == 3);
+    assert(map_len(conf) == 4);
 
     assert(map_has(handler_map, "line-set"));
     assert(map_has(handler_map, "adc-get"));
@@ -97,6 +97,16 @@ work_result_t *real_error(map_t *params, int serial) {
 }
 
 
+work_result_t *string_work(map_t *params, int serial) {
+    work_result_t *result;
+    char *res = "010000x01x00100000";
+    result = (work_result_t*)malloc(sizeof(work_result_t));
+    assert(result != NULL);
+    RESULT_SUCCESS_STR(result, res, strlen(res));
+    return result;
+}
+
+
 int test2() {
     map_t *conf, *handler_map;
     FILE *conf_file;
@@ -119,6 +129,7 @@ int test2() {
 
     handler_bind(handler_map, "line-set", real_error, conf);
     handler_bind(handler_map, "adc-get", real_work, conf);
+    handler_bind(handler_map, "line-get-all", string_work, conf);
 
     puts("Check on method not available error");
     request.name = "adc-get1";
@@ -179,6 +190,17 @@ int test2() {
     assert(res->message == NULL);
     puts("Check passed");
     free(res);
+
+    puts("\nCheck on return type string");
+    request.name = "line-get-all";
+    map_free(request.params);
+    request.params = NULL;
+    res = handler_call(handler_map, &request, 0);
+    assert(res->status == CALL_STATUS_SUCCESS);
+    assert(res->message == NULL);
+    printf("Return: %s\n", res->value);
+    assert(strcmp(res->value, "010000x01x00100000") == 0);
+    puts("Check passed");
 
     return 0;
 }

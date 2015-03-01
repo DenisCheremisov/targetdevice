@@ -34,3 +34,6 @@ rules:
         params:
             channel: integer
         return: float
+
+    line-get-all:
+        return: string

@@ -29,6 +29,8 @@ types_t type_decoded(yaml_event_t *event) {
         return TYPE_INTEGER;
     } else if(strcmp(value, "float") == 0) {
         return TYPE_FLOAT;
+    } else if(strcmp(value, "string") == 0) {
+        return TYPE_STRING;
     }
     fprintf(stderr, "%s - ", value);
     something_went_wrong(event, "no such type");

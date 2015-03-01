@@ -9,7 +9,7 @@ typedef struct {
     enum {
         WORKER_STATUS_SUCCESS,
         WORKER_STATUS_ERROR } status;
-    char result[32];
+    char result[64];
 } work_result_t;
 
 
@@ -50,6 +50,9 @@ typedef struct {
 
 #define RESULT_SUCCESS(result, var, type)                               \
     result->status = WORKER_STATUS_SUCCESS, memcpy((void*)result->result, (void*)&var, sizeof(type)), result
+
+#define RESULT_SUCCESS_STR(result, var, len)                                \
+    result->status = WORKER_STATUS_SUCCESS, strncpy(result->result, var, len), result->result[len] = '\0', result
 
 
 #define RESULT_ERROR(result)                            \
