@@ -151,6 +151,7 @@ void do_network_work(connection_rules_t *conn_rules, map_t *handlers, int serial
             break;
         case CALL_STATUS_ERROR:
             snprintf(buf, 511, "%s:invalid request:%s\n", item->key, res->message);
+            free(res->message);
             break;
         case CALL_STATUS_INTERNAL_ERROR:
             snprintf(buf, 511, "%s:error:\n", item->key);
