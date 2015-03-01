@@ -2,3 +2,4 @@ targetdevice
 *.o
 *_test
 *.pid
+conf/targetdevice.yaml
