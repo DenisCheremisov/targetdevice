@@ -190,7 +190,7 @@ connection_rules_t *parse_connection_body(yaml_parser_t *parser) {
     lexem_proceed(parser, &event);
     LEXEM_TYPE_CHECK(event, YAML_MAPPING_START_EVENT, "Connection mapping expected");
 
-    host_defined = port_defined = 0;
+    host_defined = port_defined = identity_defined = 0;
     while(1) {
         lexem_proceed(parser, &event);
         if(event.type == YAML_MAPPING_END_EVENT) {

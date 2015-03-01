@@ -1,11 +1,11 @@
-OPTS = -g
+OPTS = -g -O0
 LPATH =
 IPATH =
 CC = gcc
 COMPILE = $(CC) $(OPTS) $(LPATH) $(IPATH)
 
 all: targetdevice.o confparser.o maplib.o binder.o network.o processors.o daemon.c
-		$(CC) $(OPTS) $(LPATH) $(IPATH) -o targetdevice daemon.c targetdevice.o confparser.o maplib.o binder.o network.o processors.o -lyaml -lcrypto -lssl -lbsd
+		$(COMPILE) -o targetdevice daemon.c targetdevice.o confparser.o maplib.o binder.o network.o processors.o -lyaml -lcrypto -lssl -lbsd
 
 targetdevice.o: targetdevice.c
 		$(CC) $(OPTS) $(LPATH) $(IPATH) -c targetdevice.c

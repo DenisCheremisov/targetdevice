@@ -173,7 +173,9 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request, int 
             }
             break;
         }
+        free(item);
     }
+    free(iter);
 
     // Now call for method
     handler_result = handler_data->handler(request->params, serial);
