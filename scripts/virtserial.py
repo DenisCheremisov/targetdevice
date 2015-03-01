@@ -35,6 +35,7 @@ reserved = {KE, WR, RD, REL, ALL, AFR, ADC, IO, GET, SET, UD, USB, SER, RST}
 
 # Type check functions
 
+
 def bit_type(value):
     value = int(value)
     if value not in (0, 1):
@@ -69,10 +70,12 @@ def freq_value(value):
         raise ValueError()
     return value
 
+
 def storage_value(value):
     if value not in {'CUR', 'MEM'}:
         raise ValueError()
     return value
+
 
 def str_data(value):
     if len(value) > DATA_LIMIT_32:
@@ -97,9 +100,11 @@ class MetaSerial(type):
 def handling(*keys):
     if not all([isinstance(i, str) for i in keys]):
         raise ValueError('Key sequence length can only be either 1 or 2')
+
     def proper_deco(f):
         f.handling = tuple(keys)
         return f
+
     return proper_deco
 
 
