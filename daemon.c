@@ -15,14 +15,26 @@
 
 work_result_t *is_connected(map_t *params, int serial) {
     work_result_t *result;
+    char response[256];
+
     int boolean;
     result = (work_result_t*)malloc(sizeof(work_result_t));
     if(result == NULL) {
         perror("");
         exit(EXIT_FAILURE);
     }
-    boolean = 1;
-    RESULT_SUCCESS(result, boolean, int);
+
+    if(port_talk(serial, "$KE\r\n", response) < 0) {
+        RESULT_ERROR(result);
+    } else {
+        if(strncmp(response, "#OK", 3) == 0) {
+            boolean = 1;
+            RESULT_SUCCESS(result, boolean, int);
+        } else {
+            RESULT_ERROR(result);
+        }
+    }
+
     return result;
 }
 
@@ -30,13 +42,26 @@ work_result_t *is_connected(map_t *params, int serial) {
 work_result_t *adc_get(map_t *params, int serial) {
     work_result_t *result;
     double resp;
+    char command[512], response[256];
+    int _var, res;
     result = (work_result_t*)malloc(sizeof(work_result_t));
     if(result == NULL) {
         perror("");
         exit(EXIT_FAILURE);
     }
-    resp = atol(map_get(params, "channel")) + 0.333;
-    RESULT_SUCCESS(result, resp, double);
+
+    snprintf(command, sizeof(command) - 1, "$KE,ADC,%s\r\n", (char*)map_get(params, "channel"));
+    if(port_talk(serial, command, response) < 0) {
+        RESULT_ERROR(result);
+    } else {
+        if(sscanf(response, "#ADC,%d,%d", &_var, &res) == 2) {
+            resp = (double)res * 5. / 1023.;
+            RESULT_SUCCESS(result, resp, double);
+        } else {
+            RESULT_ERROR(result);
+        }
+    }
+
     return result;
 }
 
