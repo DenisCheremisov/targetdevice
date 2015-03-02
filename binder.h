@@ -43,7 +43,7 @@ typedef struct {
         CALL_STATUS_SUCCESS,
         CALL_STATUS_INTERNAL_ERROR,
         CALL_STATUS_ERROR } status;
-    char value[32];
+    char value[64];
     char *message;
 } call_handler_result_t;
 

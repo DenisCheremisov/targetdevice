@@ -200,6 +200,7 @@ int test2() {
     assert(res->message == NULL);
     printf("Return: %s\n", res->value);
     assert(strcmp(res->value, "010000x01x00100000") == 0);
+    free(res);
     puts("Check passed");
 
     return 0;

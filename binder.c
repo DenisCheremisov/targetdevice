@@ -205,7 +205,7 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request, int 
             break;
         case TYPE_STRING:
             strncpy(result->value, (char*)handler_result->result, 63);
-            result->value[63] = '\0';
+            result->value[strlen((char*)handler_result->result)] = '\0';
         }
     }
 

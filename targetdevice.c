@@ -110,7 +110,7 @@ int port_talk(int fd, char *command, char *response) {
 
     write(fd, command, i+2); // Write command
     n = read(fd, response, 255);
-    response[n] = 0;
+    response[n] = '\0';
     return 0;
 }
 
