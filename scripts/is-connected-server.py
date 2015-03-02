@@ -20,7 +20,9 @@ def deal_with_client(connstream):
             '0:is-connected',
             '1:adc-get:channel=2',
             '2:adc-get:channel=1',
-            '3:read-all'
+            '3:read-all',
+            '4:read-line:lineno=1',
+            '5:read-line:lineno=2'
             ])
     connstream.write(response)
     print connstream.read()
