@@ -18,7 +18,9 @@ def deal_with_client(connstream):
     else:
         response = '\n'.join([
             '0:is-connected',
-            '1:adc-get:channel=2'
+            '1:adc-get:channel=2',
+            '2:adc-get:channel=1',
+            '3:read-all'
             ])
     connstream.write(response)
     print connstream.read()

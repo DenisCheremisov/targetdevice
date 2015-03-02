@@ -66,6 +66,32 @@ work_result_t *adc_get(map_t *params, int serial) {
 }
 
 
+work_result_t *read_all(map_t *params, int serial) {
+    work_result_t *result;
+    double resp;
+    char command[512], response[256], str[64];
+    int _var, res;
+    result = (work_result_t*)malloc(sizeof(work_result_t));
+    if(result == NULL) {
+        perror("");
+        exit(EXIT_FAILURE);
+    }
+
+    snprintf(command, sizeof(command) - 1, "$KE,RD,ALL\r\n");
+    if(port_talk(serial, command, response) < 0) {
+        RESULT_ERROR(result);
+    } else {
+        if(sscanf(response, "#RD,%s", str) == 1) {
+            RESULT_SUCCESS_STR(result, str, 18);
+        } else {
+            RESULT_ERROR(result);
+        }
+    }
+
+    return result;
+}
+
+
 #define BUF_LEN 512
 char *add_str(char *op1, char *op2) {
     char *res;
@@ -97,6 +123,7 @@ map_t *bind_handlers(map_t *rules) {
     handler_map = map_create();
     handler_bind(handler_map, "is-connected", is_connected, rules);
     handler_bind(handler_map, "adc-get", adc_get, rules);
+    handler_bind(handler_map, "read-all", read_all, rules);
 
     rules_iter = map_iter(rules);
     while(rules_item = map_iter_next(rules_iter), rules_item != NULL) {
