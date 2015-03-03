@@ -149,7 +149,7 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request, int 
             if(check_float(param_value) != 0) {
                 message = error_buffer(NULL);
                 snprintf(message, ERROR_BUFFER_LENGTH - 1,
-                         "Parameter %s value is not a float, got \"%s\" instead", item->key,
+                         "%s value is not a float, got \"%s\" instead", item->key,
                          param_value);
                 goto error_status;
             }
@@ -158,7 +158,7 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request, int 
             if(check_integer(param_value) != 0) {
                 message = error_buffer(NULL);
                 snprintf(message, ERROR_BUFFER_LENGTH - 1,
-                         "Parameter %s value is not an integer, got \"%s\" instead", item->key,
+                         "%s value is not an integer, got \"%s\" instead", item->key,
                          param_value);
                 goto error_status;
             }
@@ -167,7 +167,7 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request, int 
             if(check_bit(param_value) != 0) {
                 message = error_buffer(NULL);
                 snprintf(message, ERROR_BUFFER_LENGTH - 1,
-                         "Parameter %s value is not a bit (i.e. either 0 or 1), got \"%s\" instead",
+                         "%s is not a bit (i.e. either 0 or 1), got \"%s\" instead",
                          item->key, param_value);
                 goto error_status;
             }
@@ -176,7 +176,7 @@ call_handler_result_t* handler_call(map_t *handler_map, request_t *request, int 
             if(strlen(param_value) > 63) {
                 message = error_buffer(NULL);
                 snprintf(message, ERROR_BUFFER_LENGTH - 1,
-                         "Parameter %s value is too long, needs to be less than 64 bytes",
+                         "%s is too long, needs to be less than 64 bytes",
                          item->key);
                 goto error_status;
             }
