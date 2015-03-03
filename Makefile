@@ -4,8 +4,9 @@ IPATH =
 CC = gcc
 COMPILE = $(CC) $(OPTS) $(LPATH) $(IPATH)
 
-all: targetdevice.o confparser.o maplib.o binder.o network.o processors.o daemon.c
-		$(COMPILE) -o targetdevice daemon.c targetdevice.o confparser.o maplib.o binder.o network.o processors.o -lyaml -lcrypto -lssl -lbsd
+
+all: targetdevice.o confparser.o maplib.o binder.o network.o processors.o daemon.c getters.o
+		$(COMPILE) -o targetdevice daemon.c targetdevice.o confparser.o maplib.o binder.o network.o processors.o getters.o -lyaml -lcrypto -lssl -lbsd
 
 targetdevice.o: targetdevice.c
 		$(CC) $(OPTS) $(LPATH) $(IPATH) -c targetdevice.c
@@ -25,25 +26,26 @@ processors.o: processors.c
 network.o: network.c
 		$(COMPILE) -c network.c
 
+getters.o: getters.c
+		$(COMPILE) -c getters.c
+
 clean:
-		rm -f *.o targetdevice *_test
+		rm -f *.o targetdevice test_confparser test_maplib test_binder test_processors test_network
 
 
 # This is for test purposes only
 
-confparser_test: confparser.o maplib.o confparser_test.c
-		$(CC) $(OPTS) $(LPATH) $(IPATH) -o confparser_test confparser_test.c confparser.o maplib.o -lyaml
+test_confparser: confparser.o maplib.o test_confparser.c
+		$(CC) $(OPTS) $(LPATH) $(IPATH) -o test_confparser test_confparser.c confparser.o maplib.o -lyaml
 
+test_maplib: maplib.o test_maplib.c
+		$(CC) $(OPTS) $(LPATH) $(IPATH) -o test_maplib test_maplib.c maplib.o
 
-maplib_test: maplib.o maplib_test.c
-		$(CC) $(OPTS) $(LPATH) $(IPATH) -o maplib_test maplib_test.c maplib.o
+test_binder: maplib.o confparser.o binder.o test_binder.c
+		$(COMPILE) -o test_binder maplib.o confparser.o binder.o test_binder.c -lyaml
 
+test_processors: maplib.o processors.o test_processors.c
+		$(COMPILE) -o test_processors maplib.o processors.o test_processors.c
 
-binder_test: maplib.o confparser.o binder.o binder_test.c
-		$(COMPILE) -o binder_test maplib.o confparser.o binder.o binder_test.c -lyaml
-
-processors_test: maplib.o processors.o processors_test.c
-		$(COMPILE) -o processors_test maplib.o processors.o processors_test.c
-
-network_test: network.o maplib.o confparser.o network_test.c
-		$(COMPILE) -o network_test network.o maplib.o confparser.o network_test.c -lcrypto -lssl -lyaml
+test_network: network.o maplib.o confparser.o test_network.c
+		$(COMPILE) -o test_network network.o maplib.o confparser.o test_network.c -lcrypto -lssl -lyaml

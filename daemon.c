@@ -47,10 +47,15 @@ map_t *bind_handlers(map_t *rules) {
     handler_bind(handler_map, "read-all", read_all, rules);
     handler_bind(handler_map, "read-line", read_line, rules);
     handler_bind(handler_map, "write-line", write_line, rules);
+    handler_bind(handler_map, "relay-set", relay_set, rules);
+    handler_bind(handler_map, "io-get-all", io_get_mem_all, rules);
+    handler_bind(handler_map, "io-get", io_get_mem, rules);
+    handler_bind(handler_map, "io-set", io_set, rules);
+    handler_bind(handler_map, "afr-set", afr_set, rules);
 
     rules_iter = map_iter(rules);
     while(rules_item = map_iter_next(rules_iter), rules_item != NULL) {
-        fprintf(stderr, "%s is not bind\n", rules_item->key);
+        fprintf(stderr, "%s not bound\n", rules_item->key);
         free(rules_item);
     }
     free(rules_iter);

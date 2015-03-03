@@ -16,17 +16,34 @@ def deal_with_client(connstream):
     if data.rstrip().split(':')[0] != 'ready':
         response = '0:error-intro'
     else:
-        response = '\n'.join([
+        response = [
             '0:is-connected',
             '1:adc-get:channel=2',
             '2:adc-get:channel=1',
             '3:read-all',
             '4:read-line:lineno=1',
             '5:read-line:lineno=2',
-            '6:write-line:lineno=2:value=0'
-            ])
-    connstream.write(response)
-    print connstream.read()
+            '6:write-line:lineno=2:value=0',
+            '7:relay-set:relayno=2:value=0',
+            '8:relay-set:relayno=5:value=5',
+            '9:relay-set:relayno=1:value=5',
+            '10:io-get-all',
+            '11:io-get:lineno=5',
+            '12:io-set:lineno=5:value=1',
+            '13:io-get-all',
+            '14:read-all',
+            '15:read-line:lineno=5',
+            '16:write-line:lineno=5:value=1',
+            '17:read-all',
+            '18:io-set:lineno=5:value=0',
+            '19:read-all',
+            '20:read-line:lineno=5',
+            '21:afr-set:value=2000',
+            '22:afr-set:value=200'
+            ]
+    connstream.write('\n'.join(response))
+    for ___ in zip(response, connstream.read().split('\n')):
+        print '{:32} -> {}'.format(*___)
     return
 
 
