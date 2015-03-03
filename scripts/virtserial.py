@@ -184,8 +184,6 @@ class Serial_FW1(metaclass=MetaSerial):
     def ioset(self, lineno: line_number, direction: bit_type, *args):
         if len(args) > 1:
             raise ValueError()
-        if len(args) == 1:
-            storage = storage_value(*args)
         self.iodirs[lineno - 1] = direction
         return '#IO,SET,OK'
 
@@ -198,7 +196,7 @@ class Serial_FW1(metaclass=MetaSerial):
             result = str(self.iodirs[value - 1])
         else:
             result = ''.join(map(str, self.iodirs))
-        return '#IO,GET,{storage},{result}'.format(
+        return '#IO,{result}'.format(
             storage=storage, result=result)
 
     @handling(KE, UD, SET)
