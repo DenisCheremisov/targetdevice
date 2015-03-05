@@ -266,6 +266,7 @@ def main():
     port_name = os.ttyname(slave)
     print('-'*80)
     print(port_name)
+    os.sys.stdout.flush()
 
     ser = serial.Serial(port_name, baudrate=115200)
     virtser = Serial_FW1()
@@ -273,7 +274,7 @@ def main():
     while True:
         data = os.read(master, 1000)
         result = virtser.process(data.decode('ASCII'))
-        os.write(master, (result + '\r\n').encode('ASCII'))
+        os.write(master, (result).encode('ASCII'))
 
 
 if __name__ == '__main__':
