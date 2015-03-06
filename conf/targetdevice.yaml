@@ -1,61 +1,13 @@
+daemon:
+  logfile: targetdevice.log
+  pidfile: targetdevice.pid
 
 connection:
-    host: localhost
-    port: 10023
-    identity: client_001
+  host: localhost
+  port: 10023
+  identity: client_001
 
-
-daemon:
-    logfile: targetdevice.log
-    pidfile: targetdevice.pid
-    serial: /dev/pts/13
-
-
-rules:
-    is-connected: # $KE
-        return: bit
-
-    adc-get: # $KE,ADC,<ChannelNumber - channel>
-        params:
-            channel: integer
-        return: float
-
-    read-all:
-        return: string
-
-    read-line:
-        params:
-            lineno: integer
-        return: bit
-
-    write-line:
-        params:
-            lineno: integer
-            value: bit
-        return: bit
-
-    relay-set:
-        params:
-            relayno: integer
-            value: bit
-        return: bit
-
-    io-get-all:
-        return: string
-
-    io-get:
-        params:
-            lineno: integer
-        return: bit
-
-    io-set:
-        params:
-            lineno: integer
-            value: bit
-        return: bit
-
-    afr-set:
-        params:
-            value: integer
-        return: bit
-
+drivers:
+  targetdevice:
+    type: serial
+    path: /dev/pts/19

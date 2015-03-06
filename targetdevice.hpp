@@ -5,12 +5,7 @@
 #include <sstream>
 #include <iostream>
 
-
-const size_t
-    LINE_LOWER_BOUND = 1, LINE_UPPER_BOUND = 18,
-    RELAY_LOWER_BOUND = 1, RELAY_UPPER_BOUND = 4,
-    ADC_LOWER_BOUND = 1, ADC_UPPER_BOUND = 4,
-    FREQUENCY_LOWER_BOUND = 0, FREQUENCY_UPPER_BOUND = 400;
+#include "constants.hpp"
 
 
 class TargetDeviceError: public std::exception {
