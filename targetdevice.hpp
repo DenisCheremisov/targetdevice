@@ -122,6 +122,7 @@ protected:
 
 public:
     TargetDeviceDriver(std::string file_name);
+    virtual ~TargetDeviceDriver() throw();
 
     bool connected();
 

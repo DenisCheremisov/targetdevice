@@ -96,6 +96,11 @@ TargetDeviceDriver::TargetDeviceDriver(string file_name) {
 }
 
 
+TargetDeviceDriver::~TargetDeviceDriver() throw() {
+    close(this->fd);
+}
+
+
 void TargetDeviceDriver::port_talk(string request, string &response) {
     const size_t len = request.length();
     if(len < 5) {
