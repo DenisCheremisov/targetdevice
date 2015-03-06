@@ -79,4 +79,6 @@ BOOST_AUTO_TEST_CASE(test_raw_parsing) {
     deep = dynamic_cast<MapElement*>((*tmp)["is-connected"]);
     BOOST_CHECK_EQUAL(deep->size(), 1);
     BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>((*deep)["return"])), "bit");
+
+    delete res;
 }
