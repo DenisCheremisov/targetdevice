@@ -115,6 +115,25 @@ BOOST_AUTO_TEST_CASE(test_conf_parsing) {
     BOOST_CHECK(pdriver != (SerialDriver*)NULL);
     BOOST_CHECK_EQUAL(pdriver->path(), "/dev/pts/19");
 
+    // Check devices
+    BOOST_CHECK_EQUAL(conf->devices().size(), 3);
+    Boiler *pboiler = dynamic_cast<Boiler*>(conf->devices().at("boiler"));
+    BOOST_CHECK(pboiler != (Boiler*)NULL);
+    BOOST_CHECK_EQUAL(pboiler->relay().driver, "targetdevice");
+    BOOST_CHECK_EQUAL(pboiler->relay().port, 1);
+    BOOST_CHECK_EQUAL(pboiler->temperature().driver, "targetdevice");
+    BOOST_CHECK_EQUAL(pboiler->temperature().port, 2);
+    Switcher *pswitcher = dynamic_cast<Switcher*>(conf->devices().at("switcher"));
+    BOOST_CHECK(pswitcher != (Switcher*)NULL);
+    BOOST_CHECK_EQUAL(pswitcher->relay().driver, "targetdevice");
+    BOOST_CHECK_EQUAL(pswitcher->relay().port, 2);
+    Thermoswitcher *ptermo = dynamic_cast<Thermoswitcher*>(conf->devices().at("temperature"));
+    BOOST_CHECK(ptermo != (Thermoswitcher*)NULL);
+    BOOST_CHECK_EQUAL(ptermo->relay().driver, "targetdevice");
+    BOOST_CHECK_EQUAL(ptermo->relay().port, 4);
+    BOOST_CHECK_EQUAL(ptermo->temperature().driver, "targetdevice");
+    BOOST_CHECK_EQUAL(ptermo->temperature().port, 1);
+
     delete res;
 }
 
@@ -126,14 +145,20 @@ void parse_test_fnc(FILE *fp) {
 
 
 BOOST_AUTO_TEST_CASE(test_wrong_confs) {
-    const int N = 6;
-    const char* a[N] = {
-        "1.yaml", "2.yaml", "3.yaml", "4.yaml", "5.yaml", "6.yaml"
+    const int N = 9;
+    const char* a[9] = {
+        "1.yaml", "2.yaml", "3.yaml", "4.yaml", "5.yaml", "6.yaml",
+        "dev1.yaml", "dev2.yaml", "dev3.yaml"
     };
 
     for(int i = 0; i < N; i++) {
         string file_name = string("conf/wrongconfs/") + a[i];
         FILE *fp = fopen(file_name.c_str(), "r");
+        // try {
+        //     parse_test_fnc(fp);
+        // } catch(ParserError e) {
+        //     cout << file_name << ": " << e.what() << endl;
+        // }
         BOOST_REQUIRE_THROW(parse_test_fnc(fp), ParserError);
         fclose(fp);
     }

@@ -11,6 +11,7 @@
 
 
 #include "drivers.hpp"
+#include "devices.hpp"
 #include "constants.hpp"
 
 
@@ -89,7 +90,7 @@ public:
 
 class config_drivers_t: public std::map<std::string, BaseDriver*> {
 public:
-    virtual ~config_drivers_t() {
+    virtual ~config_drivers_t() throw() {
         for(config_drivers_t::iterator it = this->begin();
             it != this->end(); it++) {
             delete it->second;
@@ -109,25 +110,40 @@ struct config_daemon_t {
 };
 
 
+class config_devices_t: public std::map<std::string, BaseDevice*> {
+public:
+    virtual ~config_devices_t() throw() {
+        for(config_devices_t::iterator it=this->begin();
+            it != this->end(); it++) {
+            delete it->second;
+        }
+    }
+};
+
+
 class Config {
 private:
     config_drivers_t *_drivers;
     config_connection_t *_connection;
     config_daemon_t *_daemon;
+    config_devices_t *_devices;
 
 public:
     Config(config_drivers_t *drvrs,
            config_connection_t *conn,
-           config_daemon_t *dmn) {
+           config_daemon_t *dmn,
+           config_devices_t *dvcs) {
         _drivers = drvrs;
         _connection = conn;
         _daemon = dmn;
+        _devices = dvcs;
     }
 
     virtual ~Config() throw() {
         delete _drivers;
         delete _connection;
         delete _daemon;
+        delete _devices;
     }
 
     const config_drivers_t &drivers() const throw() {
@@ -140,6 +156,10 @@ public:
 
     const config_daemon_t &daemon() const throw() {
         return *_daemon;
+    }
+
+    const config_devices_t &devices() const throw() {
+        return *_devices;
     }
 };
 

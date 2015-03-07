@@ -18,11 +18,6 @@ devices:
     relay: targetdevice.1
     temperature: targetdevice.2
 
-  switcher:
-    type: switcher
-    relay: targetdevice.2
-
-  temperature:
-    type: thermalswitcher
-    relay: targetdevice.4
-    temperature: targetdevice.1
+  wrong:
+    type: wrong_driver
+    relay: t.1

@@ -20,9 +20,4 @@ devices:
 
   switcher:
     type: switcher
-    relay: targetdevice.2
-
-  temperature:
-    type: thermalswitcher
-    relay: targetdevice.4
-    temperature: targetdevice.1
+    relay: targetdevice.1

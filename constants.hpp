@@ -16,4 +16,8 @@
 #define SERIAL_DESCRIPTOR "serial"
 #define CAMERA_DESCRIPTOR "camera"
 
+#define BOILER_DESCRIPTOR "boiler"
+#define SWITCHER_DESCRIPTOR "switcher"
+#define THERMALSWITCHER_DESCRIPTOR "thermalswitcher"
+
 #endif

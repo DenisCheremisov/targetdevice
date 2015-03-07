@@ -1,4 +1,5 @@
 #include <set>
+#include <list>
 #include <memory>
 #include <sstream>
 
@@ -72,7 +73,7 @@ ParsedElement *parse_all_config(yaml_parser_t &parser) {
             MapElement::iterator it = res.find(key);
             if(it != res.end()) {
                 stringstream buf;
-                buf << key << ": already defined at (" <<
+                buf << key << ": also defined at (" <<
                     it->first.start_pos().first << "," << it->first.start_pos().second <<
                     ")";
                 throw ParserError(key, buf.str());
@@ -187,7 +188,7 @@ public:
         return *value;
     }
 
-    void check_fields(MapElement &mapping, ScalarElement parent, string allowed_fields) {
+    void check_fields(MapElement &mapping, ScalarElement parent, string allowed_fields, string description = "") {
         istringstream buf(allowed_fields);
         string token;
         set<string> allowed;
@@ -198,7 +199,12 @@ public:
         for(MapElement::iterator it = mapping.begin(); it != mapping.end(); it++) {
             if(allowed.count(it->first) == 0) {
                 stringstream buf;
-                buf << "field " << it->first << " is not supported in section " << parent;
+                buf << "field " << it->first  << " is not supported in ";
+                if(description.length() > 0) {
+                    buf << description << " " << parent;
+                } else {
+                    buf << "section " << parent;
+                }
                 throw ParserError(it->first, buf.str());
             }
         }
@@ -214,11 +220,7 @@ class ScalarGetter: public FieldGetter<ScalarElement> {
 public:
     ScalarGetter(std::string proper, std::string wrong): FieldGetter<ScalarElement>(proper, wrong) {};
 
-    int get_number(MapElement& mapping, ScalarElement parent, string key, int lower_bound, int upper_bound) {
-        if(lower_bound > upper_bound) {
-            throw ParserError(parent, "lower bound must not be greater than upper");
-        }
-        ScalarElement data = get_field(mapping, parent, key);
+    int extract_number(string data, int lower_bound, int upper_bound) {
         char *p;
         long converted = strtol(data.c_str(), &p, 10);
         bool fail_condition = *p;
@@ -234,7 +236,14 @@ public:
             throw ParserError(data, buf.str());
         }
         return (int)converted;
+    }
 
+    int get_number(MapElement& mapping, ScalarElement parent, string key, int lower_bound, int upper_bound) {
+        if(lower_bound > upper_bound) {
+            throw ParserError(parent, "lower bound must not be greater than upper");
+        }
+        ScalarElement data = get_field(mapping, parent, key);
+        return extract_number(data, lower_bound, upper_bound);
     }
 
     ScalarElement get_string(MapElement& mapping, ScalarElement parent, string key, bool not_empty=false) {
@@ -244,7 +253,40 @@ public:
         }
         return data;
     }
+
+    serial_link_t get_link(MapElement& mapping, ScalarElement parent, string key,
+                           auto_ptr<config_drivers_t> &drivers,
+                           map<ScalarElement, ScalarElement> &used_paths, int lower_bound, int upper_bound) {
+        ScalarElement data = get_string(mapping, parent, key, true);
+        map<ScalarElement, ScalarElement>::iterator it = used_paths.find(data);
+        if(it != used_paths.end()) {
+            stringstream buf;
+            buf << "port " << data << " has been bound already in " << it->second << " at (" <<
+                it->first.start_pos().first << "," << it->first.start_pos().second << ")";
+            throw ParserError(data, buf.str());
+        }
+        istringstream split_buf(data);
+        string driver_name;
+        if(!getline(split_buf, driver_name, '.')) {
+            throw ParserError(data, "wrong format, must be <driver name>.<port> notation");
+        }
+        if(drivers->count(driver_name) < 1) {
+            throw ParserError(data, data + " no such driver defined");
+        }
+        string port_data;
+        if(!getline(split_buf, port_data, '.')) {
+            throw ParserError(data, "wrong format, must be <driver name>.<port> notation");
+        }
+        used_paths[data] = parent;
+        int port = extract_number(port_data, lower_bound, upper_bound);
+        return serial_link_t(driver_name, port);
+    }
 };
+
+
+bool compare_scalars(const ScalarElement &o1, const ScalarElement &o2) {
+    return o1 < o2 || o1.start_pos() < o2.start_pos();
+}
 
 
 FieldGetter<MapElement> map_getter("mapping", "scalar");
@@ -255,7 +297,7 @@ Config *config_parse(MapElement *_rawconf) {
     Config *cfg;
     MapElement &rawconf = *_rawconf;
 
-    map_getter.check_fields(rawconf, "root", "connection,daemon,drivers");
+    map_getter.check_fields(rawconf, "root", "connection,daemon,drivers,devices");
     // Form connection
     MapElement &connection = map_getter.get_field(rawconf, "", "connection");
     ScalarElement conn_parent = map_getter.parent_name();
@@ -273,25 +315,33 @@ Config *config_parse(MapElement *_rawconf) {
     dmn->logfile = scalar_getter.get_field(daemon, daemon_parent, "logfile");
     dmn->pidfile = scalar_getter.get_field(daemon, daemon_parent, "pidfile");
 
+    // For duplication detection needs
+    list<ScalarElement> key_list;
+
     // Form drivers
     MapElement &drivers = map_getter.get_field(rawconf, "", "drivers");
     ScalarElement drivers_parent = map_getter.parent_name();
     auto_ptr<config_drivers_t> drvrs(new config_drivers_t);
     map<ScalarElement, ScalarElement> serial_device_path;
+    key_list.clear();
     for(MapElement::iterator it = drivers.begin(); it != drivers.end(); it++) {
-        MapElement &driverconf = map_getter.get_field(drivers, drivers_parent, it->first);
+        key_list.push_back(it->first);
+    }
+    key_list.sort(compare_scalars);
+    for(list<ScalarElement>::iterator it = key_list.begin(); it != key_list.end(); it++) {
+        MapElement &driverconf = map_getter.get_field(drivers, drivers_parent, *it);
         ScalarElement driver_parent = map_getter.parent_name();
-        map_getter.check_fields(driverconf, driver_parent, "path,type");
 
         ScalarElement device_type = scalar_getter.get_string(driverconf, driver_parent, "type", true);
         if(device_type == SERIAL_DESCRIPTOR) {
+            map_getter.check_fields(driverconf, driver_parent, "type,path", "serial device description");
             ScalarElement device_path = scalar_getter.get_string(driverconf, driver_parent, "path", true);
             map<ScalarElement, ScalarElement>::iterator duplicate = serial_device_path.find(device_path);
             if(duplicate != serial_device_path.end()) {
                 stringstream buf;
-                buf << "Serial device path " << device_path << " is also bound at (" <<
+                buf << driver_parent << " - serial device path " << device_path << " has been bound already at (" <<
                     duplicate->first.start_pos().first << "," << duplicate->first.start_pos().second <<
-                    "), section " << duplicate->second;
+                    ") to device " << duplicate->second;
                 throw ParserError(device_path, buf.str());
             }
             serial_device_path[device_path] = driver_parent;
@@ -301,5 +351,50 @@ Config *config_parse(MapElement *_rawconf) {
         }
     }
 
-    return new Config(drvrs.release(), conn.release(), dmn.release());
+    // Form devices
+    MapElement &devices = map_getter.get_field(rawconf, "", "devices");
+    ScalarElement devices_parent = map_getter.parent_name();
+    auto_ptr<config_devices_t> dvcs(new config_devices_t);
+    key_list.clear();
+    for(MapElement::iterator it = devices.begin(); it != devices.end(); it++) {
+        key_list.push_back(it->first);
+    }
+    key_list.sort(compare_scalars);
+    map<ScalarElement, ScalarElement> relay_used, adc_used;
+    for(list<ScalarElement>::iterator it = key_list.begin(); it != key_list.end(); it++) {
+        MapElement &deviceconf = map_getter.get_field(devices, devices_parent, *it);
+        ScalarElement device_parent = map_getter.parent_name();
+
+        ScalarElement device_type = scalar_getter.get_string(deviceconf, device_parent, "type", true);
+        if(device_type == BOILER_DESCRIPTOR) {
+            map_getter.check_fields(deviceconf, device_parent, "type,relay,temperature", "boiling device description");
+            serial_link_t relay = scalar_getter.get_link(deviceconf, device_parent, "relay",
+                                                         drvrs,
+                                                         relay_used, RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
+            serial_link_t temperature = scalar_getter.get_link(deviceconf, device_parent, "temperature",
+                                                               drvrs,
+                                                               adc_used, ADC_LOWER_BOUND, ADC_UPPER_BOUND);
+            (*dvcs)[device_parent] = new Boiler(relay, temperature);
+        } else if(device_type == SWITCHER_DESCRIPTOR) {
+            map_getter.check_fields(deviceconf, device_parent, "type,relay", " switcher description");
+            serial_link_t relay = scalar_getter.get_link(deviceconf, device_parent, "relay",
+                                                         drvrs,
+                                                         relay_used, RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
+            (*dvcs)[device_parent] = new Switcher(relay);
+        } else if(device_type == THERMALSWITCHER_DESCRIPTOR) {
+            map_getter.check_fields(deviceconf, device_parent, "type,relay,temperature",
+                                    "temperature measurement device description");
+            serial_link_t relay = scalar_getter.get_link(deviceconf, device_parent, "relay",
+                                                         drvrs,
+                                                         relay_used, RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
+            serial_link_t temperature = scalar_getter.get_link(deviceconf, device_parent, "temperature",
+                                                               drvrs,
+                                                               adc_used, ADC_LOWER_BOUND, ADC_UPPER_BOUND);
+            (*dvcs)[device_parent] = new Thermoswitcher(relay, temperature);
+        } else {
+            throw ParserError(device_type, device_type + " not supported");
+        }
+    }
+
+    return new Config(drvrs.release(), conn.release(), dmn.release(), dvcs.release());
 }

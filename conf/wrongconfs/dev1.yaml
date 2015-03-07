@@ -15,14 +15,5 @@ drivers:
 devices:
   boiler:
     type: boiler
-    relay: targetdevice.1
+    relay: targetdevic.1
     temperature: targetdevice.2
-
-  switcher:
-    type: switcher
-    relay: targetdevice.2
-
-  temperature:
-    type: thermalswitcher
-    relay: targetdevice.4
-    temperature: targetdevice.1

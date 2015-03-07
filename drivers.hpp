@@ -8,22 +8,18 @@
 
 
 typedef enum {
-    BASE_DRIVER_UNDEFINED,
-    BASE_DRIVER_SERIAL,
-    BASE_DRIVER_CAMERA
+    DRIVER_UNDEFINED,
+    DRIVER_SERIAL,
+    DRIVER_CAMERA
 } driver_type_t;
 
 
 class BaseDriver {
-private:
-    driver_type_t device_id;
-
+public:
 
     virtual driver_type_t id() throw() {
-        return BASE_DRIVER_UNDEFINED;
+        return DRIVER_UNDEFINED;
     };
-
-public:
     virtual ~BaseDriver() throw() {};
 };
 
@@ -35,7 +31,7 @@ private:
 public:
     SerialDriver(std::string path): device_path(path) {};
     driver_type_t id() throw() {
-        return BASE_DRIVER_SERIAL;
+        return DRIVER_SERIAL;
     }
     const std::string& path() const throw() {
         return device_path;
