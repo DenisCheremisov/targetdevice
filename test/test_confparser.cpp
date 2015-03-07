@@ -3,12 +3,14 @@
 #define BOOST_TEST_MODULE ConfParserModule
 
 #include <cstdio>
+#include <memory>
 
 #include <boost/test/unit_test.hpp>
 
 #include "../confparser.hpp"
 
 const char *YAML_TEST_FILE = "conf/test.yaml";
+const char *CONF_TEST_FILE = "conf/targetdevice.yaml";
 
 using namespace std;
 
@@ -81,4 +83,58 @@ BOOST_AUTO_TEST_CASE(test_raw_parsing) {
     BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>((*deep)["return"])), "bit");
 
     delete res;
+}
+
+
+BOOST_AUTO_TEST_CASE(test_conf_parsing) {
+    FILE *fp;
+    fp = fopen(CONF_TEST_FILE, "r");
+    if(fp == NULL) {
+        perror(CONF_TEST_FILE);
+        throw runtime_error(string("Cannot open sample file: ") + YAML_TEST_FILE);
+    }
+
+    MapElement *res, *tmp, *deep;
+
+    res = dynamic_cast<MapElement*>(raw_conf_parse(fp));
+
+    auto_ptr<Config> conf(config_parse(res));
+
+    // Check daemon section
+    BOOST_CHECK_EQUAL(conf->daemon().logfile, "targetdevice.log");
+    BOOST_CHECK_EQUAL(conf->daemon().pidfile, "targetdevice.pid");
+
+    // Check connection section
+    BOOST_CHECK_EQUAL(conf->connection().host, "localhost");
+    BOOST_CHECK_EQUAL(conf->connection().port, 10023);
+    BOOST_CHECK_EQUAL(conf->connection().identity, "client_001");
+
+    // Check drivers
+    BOOST_CHECK_EQUAL(conf->drivers().size(), 1);
+    SerialDriver *pdriver = dynamic_cast<SerialDriver*>(conf->drivers().at("targetdevice"));
+    BOOST_CHECK(pdriver != (SerialDriver*)NULL);
+    BOOST_CHECK_EQUAL(pdriver->path(), "/dev/pts/19");
+
+    delete res;
+}
+
+
+void parse_test_fnc(FILE *fp) {
+    MapElement *res = dynamic_cast<MapElement*>(raw_conf_parse(fp));
+    config_parse(res);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_wrong_confs) {
+    const int N = 6;
+    const char* a[N] = {
+        "1.yaml", "2.yaml", "3.yaml", "4.yaml", "5.yaml", "6.yaml"
+    };
+
+    for(int i = 0; i < N; i++) {
+        string file_name = string("conf/wrongconfs/") + a[i];
+        FILE *fp = fopen(file_name.c_str(), "r");
+        BOOST_REQUIRE_THROW(parse_test_fnc(fp), ParserError);
+        fclose(fp);
+    }
 }

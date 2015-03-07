@@ -28,12 +28,12 @@ public:
 };
 
 
-class SerialDriver: public BaseDriver, public TargetDeviceDriver {
+class SerialDriver: public BaseDriver {
 private:
     std::string device_path;
 
 public:
-    SerialDriver(std::string path): device_path(path), TargetDeviceDriver(path) {};
+    SerialDriver(std::string path): device_path(path) {};
     driver_type_t id() throw() {
         return BASE_DRIVER_SERIAL;
     }

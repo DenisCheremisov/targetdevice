@@ -1,0 +1,14 @@
+daemon:
+  logfile: targetdevice.log
+  pidfile: targetdevice.pid
+  wrongfield: value of wrong field
+
+connection:
+  host: localhost
+  port: 10023
+  identity: client_001
+
+drivers:
+  targetdevice:
+    type: serial
+    path: /dev/pts/19

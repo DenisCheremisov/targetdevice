@@ -35,6 +35,7 @@ public:
     }
     ScalarElement(std::string &token): std::string(token) {};
     ScalarElement(const char *data): std::string(data) {};
+    ScalarElement() {};
     ~ScalarElement() throw() {};
 
     const location_t start_pos() const {
@@ -70,9 +71,10 @@ public:
     ParserError(std::string msg): message(msg) {};
     ParserError(const yaml_event_t &event, std::string message);
     ParserError(const ScalarElement &token, std::string message);
+    ParserError(const ParserError &a): message(a.message) {};
     ~ParserError() throw() {};
     const char *what() const throw() {
-        return this->message.c_str();
+        return message.c_str();
     }
 };
 

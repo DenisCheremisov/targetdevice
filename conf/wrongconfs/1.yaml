@@ -1,0 +1,13 @@
+daemon:
+  logfile: targetdevice.log
+  pidfile: targetdevice.pid
+
+connection:
+  host:
+  port: 10023
+  identity: client_001
+
+drivers:
+  targetdevice:
+    type: serial
+    path: /dev/pts/19

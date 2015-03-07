@@ -17,5 +17,5 @@ clean:
 test_targetdevice: targetdevice.o test/test_targetdevice.cpp
 	$(COMPILE) -o test_targetdevice targetdevice.o test/test_targetdevice.cpp $(TESTFLAGS)
 
-test_confparser: confparser.o test/test_confparser.cpp
-	$(COMPILE) -o test_confparser confparser.o test/test_confparser.cpp $(TESTFLAGS) -lyaml
+test_confparser: confparser.o test/test_confparser.cpp targetdevice.o
+	$(COMPILE) -o test_confparser confparser.o targetdevice.o test/test_confparser.cpp $(TESTFLAGS) -lyaml

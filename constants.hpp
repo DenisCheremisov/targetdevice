@@ -14,5 +14,6 @@
 #define PORT_UPPER_BOUND 65535
 
 #define SERIAL_DESCRIPTOR "serial"
+#define CAMERA_DESCRIPTOR "camera"
 
 #endif

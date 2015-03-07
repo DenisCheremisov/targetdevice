@@ -1,0 +1,17 @@
+daemon:
+  logfile: targetdevice.log
+  pidfile: targetdevice.pid
+
+connection:
+  host: localhost
+  port: 10023
+  identity: client_001
+
+drivers:
+  targetdevice:
+    type: serial
+    path: /dev/pts/19
+
+  t1:
+    type: camera
+    video: /dev

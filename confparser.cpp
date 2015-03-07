@@ -1,3 +1,5 @@
+#include <set>
+#include <memory>
 #include <sstream>
 
 #include "confparser.hpp"
@@ -10,7 +12,7 @@ ParserError::ParserError(const yaml_event_t &event, string message) {
     buf << "Error at (" << event.start_mark.line + 1 << "," << event.start_mark.column <<
         ")-(" << event.end_mark.line + 1 << "," << event.end_mark.column << "): " << message;
 
-    message = buf.str();
+    this->message = buf.str();
 }
 
 
@@ -20,7 +22,7 @@ ParserError::ParserError(const ScalarElement &token, string message) {
         ")-(" << token.end_pos().first << "," << token.end_pos().second << "): " <<
         token << " - " << message;
 
-    message = buf.str();
+    this->message = buf.str();
 }
 
 
@@ -42,8 +44,8 @@ void token_type_match(yaml_event_t &event, yaml_event_type_e type_name, std::str
 
 ParsedElement *parse_all_config(yaml_parser_t &parser) {
     yaml_event_t event;
-    MapElement *result;
     ParsedElement *value;
+    MapElement *result;
 
     token_proceed(parser, event);
     switch(event.type) {
@@ -54,16 +56,33 @@ ParsedElement *parse_all_config(yaml_parser_t &parser) {
         result = new MapElement;
         break;
     default:
-        throw UnsupportedConstructionError(event, "Only mappings and strings are supported");
+        throw UnsupportedConstructionError(event, "only mappings and strings are supported");
     }
 
-    while(true) {
-        token_proceed(parser, event);
-        if(event.type == YAML_MAPPING_END_EVENT) {
-            break;
+    MapElement &res = *result;
+    try {
+        while(true) {
+            token_proceed(parser, event);
+            if(event.type == YAML_MAPPING_END_EVENT) {
+                break;
+            }
+            token_type_match(event, YAML_SCALAR_EVENT, "Section name expected");
+
+            ScalarElement key(event);
+            MapElement::iterator it = res.find(key);
+            if(it != res.end()) {
+                stringstream buf;
+                buf << key << ": already defined at (" <<
+                    it->first.start_pos().first << "," << it->first.start_pos().second <<
+                    ")";
+                throw ParserError(key, buf.str());
+            }
+
+            res[ScalarElement(event)] = parse_all_config(parser);
         }
-        token_type_match(event, YAML_SCALAR_EVENT, "Section name expected");
-        (*result)[ScalarElement(event)] = parse_all_config(parser);
+    } catch(...) {
+        delete result;
+        throw;
     }
 
     return result;
@@ -127,11 +146,10 @@ MapElement *raw_conf_parse(FILE *fp) {
 template <class T> class FieldGetter {
 private:
     string proper_type, wrong_type;
-    ScalarElement *_parent_field;
+    ScalarElement _parent_field;
 
 public:
-    FieldGetter(string proper, string wrong): proper_type(proper), wrong_type(wrong),
-                                               _parent_field((ScalarElement*)NULL) {};
+    FieldGetter(string proper, string wrong): proper_type(proper), wrong_type(wrong) {};
 
     void raise_exception(ScalarElement &parent, string message) {
         if(parent.length() > 0) {
@@ -145,13 +163,13 @@ public:
         stringstream buf;
         string section_name = (parent.length() > 0)?parent:"root";
 
-        buf << "No required field " << key << " found in " << section_name << " section";
+        buf << "no required field " << key << " found in " << section_name << " section";
         raise_exception(parent, buf.str());
     }
 
     string wrong_type_exception(ScalarElement key) {
         stringstream buf;
-        buf << "Field " << key << " must define a " << proper_type << " not " << wrong_type;
+        buf << "field " << key << " must define a " << proper_type << " not " << wrong_type;
         raise_exception(key, buf.str());
     }
 
@@ -165,11 +183,29 @@ public:
         if(value == (T*)NULL) {
             wrong_type_exception(it->first);
         }
+        _parent_field = it->first;
         return *value;
     }
 
+    void check_fields(MapElement &mapping, ScalarElement parent, string allowed_fields) {
+        istringstream buf(allowed_fields);
+        string token;
+        set<string> allowed;
+        while(getline(buf, token, ',')) {
+            allowed.insert(token);
+        }
+
+        for(MapElement::iterator it = mapping.begin(); it != mapping.end(); it++) {
+            if(allowed.count(it->first) == 0) {
+                stringstream buf;
+                buf << "field " << it->first << " is not supported in section " << parent;
+                throw ParserError(it->first, buf.str());
+            }
+        }
+    }
+
     ScalarElement parent_name() throw() {
-        return *_parent_field;
+        return _parent_field;
     }
 };
 
@@ -214,17 +250,17 @@ public:
 FieldGetter<MapElement> map_getter("mapping", "scalar");
 ScalarGetter scalar_getter("scalar", "mapping");
 
+
 Config *config_parse(MapElement *_rawconf) {
     Config *cfg;
     MapElement &rawconf = *_rawconf;
-    config_connection_t *conn;
-    config_daemon_t *dmn;
-    config_drivers_t *drvrs;
 
+    map_getter.check_fields(rawconf, "root", "connection,daemon,drivers");
     // Form connection
     MapElement &connection = map_getter.get_field(rawconf, "", "connection");
     ScalarElement conn_parent = map_getter.parent_name();
-    conn = new config_connection_t;
+    map_getter.check_fields(connection, conn_parent, "host,port,identity");
+   auto_ptr<config_connection_t> conn(new config_connection_t);
     conn->host = scalar_getter.get_string(connection, conn_parent, "host", true);
     conn->port = scalar_getter.get_number(connection, conn_parent, "port", PORT_LOWER_BOUND, PORT_UPPER_BOUND);
     conn->identity = scalar_getter.get_string(connection, conn_parent, "identity", true);
@@ -232,26 +268,38 @@ Config *config_parse(MapElement *_rawconf) {
     // Form daemon data
     MapElement &daemon = map_getter.get_field(rawconf, "", "daemon");
     ScalarElement daemon_parent = map_getter.parent_name();
-    dmn = new config_daemon_t;
+    map_getter.check_fields(daemon, daemon_parent, "logfile,pidfile");
+    auto_ptr<config_daemon_t> dmn(new config_daemon_t);
     dmn->logfile = scalar_getter.get_field(daemon, daemon_parent, "logfile");
     dmn->pidfile = scalar_getter.get_field(daemon, daemon_parent, "pidfile");
 
-    // Form base devices data
-    MapElement &drivers = map_getter.get_field(rawconf, "", "basedevices");
+    // Form drivers
+    MapElement &drivers = map_getter.get_field(rawconf, "", "drivers");
     ScalarElement drivers_parent = map_getter.parent_name();
-    drvrs = new config_drivers_t;
+    auto_ptr<config_drivers_t> drvrs(new config_drivers_t);
+    map<ScalarElement, ScalarElement> serial_device_path;
     for(MapElement::iterator it = drivers.begin(); it != drivers.end(); it++) {
         MapElement &driverconf = map_getter.get_field(drivers, drivers_parent, it->first);
         ScalarElement driver_parent = map_getter.parent_name();
+        map_getter.check_fields(driverconf, driver_parent, "path,type");
 
         ScalarElement device_type = scalar_getter.get_string(driverconf, driver_parent, "type", true);
         if(device_type == SERIAL_DESCRIPTOR) {
             ScalarElement device_path = scalar_getter.get_string(driverconf, driver_parent, "path", true);
+            map<ScalarElement, ScalarElement>::iterator duplicate = serial_device_path.find(device_path);
+            if(duplicate != serial_device_path.end()) {
+                stringstream buf;
+                buf << "Serial device path " << device_path << " is also bound at (" <<
+                    duplicate->first.start_pos().first << "," << duplicate->first.start_pos().second <<
+                    "), section " << duplicate->second;
+                throw ParserError(device_path, buf.str());
+            }
+            serial_device_path[device_path] = driver_parent;
             (*drvrs)[driver_parent] = new SerialDriver(device_path);
         } else {
             throw ParserError(device_type, device_type + " not supported");
         }
     }
 
-    return new Config(drvrs, conn, dmn);
+    return new Config(drvrs.release(), conn.release(), dmn.release());
 }
