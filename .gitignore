@@ -2,3 +2,4 @@ targetdevice
 *.o
 *_test
 *.pid
+test_*
