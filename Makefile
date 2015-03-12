@@ -11,6 +11,9 @@ targetdevice.o: targetdevice.cpp targetdevice.hpp
 confparser.o: confparser.cpp confparser.hpp
 	$(COMPILE) -c confparser.cpp
 
+runtime.o: runtime.cpp runtime.hpp
+	$(COMPILE) -c runtime.cpp
+
 clean:
 	rm *.o test_*
 
@@ -19,3 +22,6 @@ test_targetdevice: targetdevice.o test/test_targetdevice.cpp
 
 test_confparser: confparser.o test/test_confparser.cpp targetdevice.o
 	$(COMPILE) -o test_confparser confparser.o targetdevice.o test/test_confparser.cpp $(TESTFLAGS) -lyaml
+
+test_runtime: runtime.o test/test_runtime.cpp
+	$(COMPILE) -o test_runtime runtime.o test/test_runtime.cpp $(TESTFLAGS)
