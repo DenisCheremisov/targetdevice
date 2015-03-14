@@ -121,9 +121,9 @@ public:
 };
 
 
-class BaseScheduleItem {
+class BaseTask {
 public:
-    virtual ~BaseScheduleItem() throw() {};
+    virtual ~BaseTask() throw() {};
 
     virtual bool ready() throw() = 0;
     virtual bool expired() throw() = 0;
@@ -133,12 +133,12 @@ public:
 
 class Schedule {
 private:
-    std::list<BaseScheduleItem*> items;
+    std::list<BaseTask*> items;
 
 public:
     virtual ~Schedule() throw();
     Commands *get_commands();
-    void add_item(BaseScheduleItem *item);
+    void add_item(BaseTask *item);
     void remove_expired();
 };
 

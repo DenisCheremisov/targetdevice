@@ -23,7 +23,7 @@ NamedResults* Executor::execute() throw() {
 
 
 Schedule::~Schedule() throw() {
-    for(list<BaseScheduleItem*>::iterator it = items.begin();
+    for(list<BaseTask*>::iterator it = items.begin();
         it != items.end(); it++) {
         delete *it;
     }
@@ -33,7 +33,7 @@ Schedule::~Schedule() throw() {
 Commands *Schedule::get_commands() {
     auto_ptr<Commands> result(new Commands);
 
-    for(list<BaseScheduleItem*>::iterator it = items.begin();
+    for(list<BaseTask*>::iterator it = items.begin();
         it != items.end(); it++) {
         if((*it)->ready()) {
             result->push_back((*it)->get_command());
@@ -44,8 +44,8 @@ Commands *Schedule::get_commands() {
 }
 
 
-void Schedule::add_item(BaseScheduleItem *item) {
-    // for(list<BaseScheduleItem*>::iterator it = items.begin();
+void Schedule::add_item(BaseTask *item) {
+    // for(list<BaseTask*>::iterator it = items.begin();
     //     it != items.end(); it++) {
     //     if(item->get_command()->expired()) {
     //         delete *it;
@@ -59,7 +59,7 @@ void Schedule::add_item(BaseScheduleItem *item) {
 
 
 void Schedule::remove_expired() {
-    list<BaseScheduleItem*>::iterator it = items.begin();
+    list<BaseTask*>::iterator it = items.begin();
     while(it != items.end()) {
         if((*it)->expired()) {
             delete *it;

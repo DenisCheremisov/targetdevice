@@ -45,9 +45,9 @@ BOOST_AUTO_TEST_CASE(test_runtime_executor) {
 }
 
 
-class EvenScheduleItem: public BaseScheduleItem {
+class EvenTask: public BaseTask {
 public:
-    ~EvenScheduleItem() throw() {};
+    ~EvenTask() throw() {};
 
     bool ready() throw() {
         return true;
@@ -63,9 +63,9 @@ public:
 };
 
 
-class OddScheduleItem: public EvenScheduleItem {
+class OddTask: public EvenTask {
 public:
-    ~OddScheduleItem() throw() {};
+    ~OddTask() throw() {};
 
     bool expired() throw() {
         return true;
@@ -77,8 +77,8 @@ BOOST_AUTO_TEST_CASE(test_schedule) {
     Schedule sched;
 
     for(int i = 0; i < 6; i++) {
-        sched.add_item(new EvenScheduleItem);
-        sched.add_item(new OddScheduleItem);
+        sched.add_item(new EvenTask);
+        sched.add_item(new OddTask);
     }
 
     Commands *nores;
