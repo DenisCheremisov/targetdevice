@@ -14,6 +14,9 @@ confparser.o: confparser.cpp confparser.hpp
 runtime.o: runtime.cpp runtime.hpp
 	$(COMPILE) -c runtime.cpp
 
+cron.o: cron.cpp cron.hpp
+	$(COMPILE) -c cron.cpp
+
 clean:
 	rm *.o test_*
 
@@ -25,3 +28,6 @@ test_confparser: confparser.o test/test_confparser.cpp targetdevice.o
 
 test_runtime: runtime.o test/test_runtime.cpp
 	$(COMPILE) -o test_runtime runtime.o test/test_runtime.cpp $(TESTFLAGS)
+
+test_cron: cron.o test/test_cron.cpp
+	$(COMPILE) -o test_cron cron.o test/test_cron.cpp $(TESTFLAGS)

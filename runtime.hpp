@@ -8,6 +8,11 @@
 #include <sstream>
 #include <typeinfo>
 
+namespace libc {
+#include <cstdlib>
+#include <ctime>
+}
+
 
 typedef enum {
     RESULT_SERIAL_ERROR,
@@ -140,6 +145,70 @@ public:
     Commands *get_commands();
     void add_item(BaseTask *item);
     void remove_expired();
+};
+
+//
+// Task implementation
+
+class TaskError: public std::exception, std::string {
+public:
+    ~TaskError() throw() {};
+    TaskError(const std::string &msg): std::string(msg) {};
+    const char *what() const throw() {
+        return this->c_str();
+    }
+};
+
+
+class TaskInPastError: public TaskError {
+public:
+    ~TaskInPastError() throw() {};
+    TaskInPastError(const std::string &msg): std::string(msg) {};
+};
+
+
+class DelayedTask: public BaseTask {
+private:
+    libc::time_t *point;
+    bool is_expired;
+
+public:
+    virtual ~DelayedTask() throw() {};
+    DelayedTask(libc::time_t *pnt) {
+        libc::time_t cur = libc::time(0);
+        if(pnt <= cur) {
+            throw TaskInPastError();
+        }
+        point = pnt;
+        is_expired = false;
+    }
+
+    bool ready() throw() {
+        libc::time_t cur = libc::time(0);
+        if(cur >= point) {
+            is_expired = true;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool expired() throw() {
+        return is_expired;
+    }
+};
+
+
+class PermanentTask: public BaseTask {
+private:
+    bool is_ready;
+
+public:
+    virtual ~PermanentTask() throw() {};
+
+    bool expired() throw() {
+        return false;
+    }
 };
 
 #endif
