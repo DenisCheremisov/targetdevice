@@ -133,6 +133,8 @@ BOOST_AUTO_TEST_CASE(test_date_matcher) {
     DateMatcher date(&dt, &minute, &hour, &wday, &mday, &month);
 
     BOOST_CHECK_EQUAL(date.match(0), false);
+    month << 2;
+    BOOST_CHECK_EQUAL(date.match(0), false);
     month << 3;
     BOOST_CHECK_EQUAL(date.match(0), true);
 }
