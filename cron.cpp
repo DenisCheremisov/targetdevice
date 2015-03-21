@@ -1,7 +1,7 @@
 #include <sstream>
+#include <ctime>
 
 #include "cron.hpp"
-
 
 using namespace std;
 
@@ -75,4 +75,29 @@ bool RangeMatcher::match(int value) throw() {
         return false;
     }
     return (value - begin) % step == 0;
+}
+
+
+cron_time_t LocalDateTimeGenerator::get(int timestamp) {
+    time_t stamp = timestamp;
+    tm *dt = localtime(&stamp);
+    cron_time_t res;
+    res.minute = dt->tm_min;
+    res.hour = dt->tm_hour;
+    res.wday = dt->tm_wday;
+    res.mday = dt->tm_mday;
+    res.month = dt->tm_mon + 1;
+    return res;
+}
+
+
+bool DateMatcher::match(int value) throw() {
+    cron_time_t ltime = datetime->get(value);
+    bool res =
+        this->minute->match(ltime.minute) &&
+        this->hour->match(ltime.hour) &&
+        this->wday->match(ltime.wday) &&
+        this->mday->match(ltime.mday) &&
+        this->month->match(ltime.month);
+    return res;
 }

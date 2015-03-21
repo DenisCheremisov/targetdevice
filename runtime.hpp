@@ -7,11 +7,7 @@
 #include <string>
 #include <sstream>
 #include <typeinfo>
-
-namespace libc {
-#include <cstdlib>
 #include <ctime>
-}
 
 
 typedef enum {
@@ -163,28 +159,28 @@ public:
 class TaskInPastError: public TaskError {
 public:
     ~TaskInPastError() throw() {};
-    TaskInPastError(const std::string &msg): std::string(msg) {};
+    TaskInPastError(const std::string &msg): TaskError(msg) {};
 };
 
 
 class DelayedTask: public BaseTask {
 private:
-    libc::time_t *point;
+    time_t point;
     bool is_expired;
 
 public:
     virtual ~DelayedTask() throw() {};
-    DelayedTask(libc::time_t *pnt) {
-        libc::time_t cur = libc::time(0);
-        if(pnt <= cur) {
-            throw TaskInPastError();
+    DelayedTask(time_t pnt) {
+        time_t cur = time(0);
+        if(difftime(pnt, cur) <= 0.) {
+            throw TaskInPastError("Attempt to set delayed task in the past");
         }
         point = pnt;
         is_expired = false;
     }
 
     bool ready() throw() {
-        libc::time_t cur = libc::time(0);
+        time_t cur = time(0);
         if(cur >= point) {
             is_expired = true;
             return true;

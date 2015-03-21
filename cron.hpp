@@ -72,4 +72,71 @@ public:
 };
 
 
+class AlwaysMatcher: public BaseMatcher {
+public:
+    ~AlwaysMatcher() throw() {};
+
+    bool match(int value) throw() {
+        return true;
+    }
+};
+
+
+struct cron_time_t {
+public:
+    int minute, hour, wday, mday, month;
+};
+
+
+class BaseDateTimeGenerator {
+public:
+    virtual ~BaseDateTimeGenerator() throw() {};
+    virtual cron_time_t get(int timestamp) = 0;
+};
+
+
+class LocalDateTimeGenerator: public BaseDateTimeGenerator {
+public:
+    virtual ~LocalDateTimeGenerator() throw() {};
+    virtual cron_time_t get(int timestamp);
+};
+
+
+class FrozenDateTimeGenerator: public BaseDateTimeGenerator {
+private:
+    cron_time_t value;
+
+public:
+    virtual ~FrozenDateTimeGenerator() throw() {};
+    FrozenDateTimeGenerator(cron_time_t val): value(val) {};
+    cron_time_t get(int timestamp) {
+        return value;
+    }
+};
+
+
+class DateMatcher: public BaseMatcher {
+private:
+    BaseDateTimeGenerator *datetime;
+    BaseMatcher *minute, *hour, *wday, *mday, *month;
+
+public:
+    ~DateMatcher() throw() {};
+    DateMatcher(BaseDateTimeGenerator *dt,
+                BaseMatcher *mnt,
+                BaseMatcher *hr,
+                BaseMatcher *wd,
+                BaseMatcher *md,
+                BaseMatcher *mth) {
+        datetime = dt;
+        minute = mnt;
+        hour = hr;
+        wday = wd;
+        mday = md;
+        month = mth;
+    }
+
+    bool match(int) throw();
+};
+
 #endif

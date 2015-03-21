@@ -2,6 +2,8 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE CronEmuModule
 
+#include <ctime>
+
 #include <boost/test/unit_test.hpp>
 
 #include "../cron.hpp"
@@ -76,4 +78,61 @@ BOOST_AUTO_TEST_CASE(test_range_matcher) {
                         RangeMatcherWrongInitValue);
     BOOST_REQUIRE_THROW(matcher3.set_range(25, -1, 2),
                         RangeMatcherWrongInitValue);
+}
+
+
+// WARNING:  this test only works for Europe/Moscow timezone
+BOOST_AUTO_TEST_CASE(test_datetime_generator) {
+    LocalDateTimeGenerator dt;
+
+    time_t timestamp = 1426913080;
+    cron_time_t res = dt.get((int)timestamp);
+    tm *check = localtime(&timestamp);
+
+    BOOST_CHECK_EQUAL(res.minute,  44);
+    BOOST_CHECK_EQUAL(res.hour, 7);
+    BOOST_CHECK_EQUAL(res.wday, 6);
+    BOOST_CHECK_EQUAL(res.mday, 21);
+    BOOST_CHECK_EQUAL(res.month, 3);
+
+    BOOST_CHECK_EQUAL(res.minute, check->tm_min);
+    BOOST_CHECK_EQUAL(res.hour, check->tm_hour);
+    BOOST_CHECK_EQUAL(res.wday, check->tm_wday);
+    BOOST_CHECK_EQUAL(res.mday, check->tm_mday);
+    BOOST_CHECK_EQUAL(res.month, check->tm_mon + 1);
+}
+
+
+
+class DummyDateTime: public BaseDateTimeGenerator {
+public:
+    ~DummyDateTime() throw() {};
+    cron_time_t get(int timestamp) {
+        cron_time_t res;
+        res.minute = 15;
+        res.hour = 17;
+        res.wday = 6;
+        res.mday = 21;
+        res.month = 3;
+        return res;
+    }
+};
+
+
+BOOST_AUTO_TEST_CASE(test_date_matcher) {
+    time_t timestamp = 0;
+
+    RangeMatcher minute;
+    minute.set_range(0, 60, 15);
+
+    AlwaysMatcher hour, wday, mday;
+    EnumMatcher month;
+
+    DummyDateTime dt;
+
+    DateMatcher date(&dt, &minute, &hour, &wday, &mday, &month);
+
+    BOOST_CHECK_EQUAL(date.match(0), false);
+    month << 3;
+    BOOST_CHECK_EQUAL(date.match(0), true);
 }
