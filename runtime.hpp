@@ -173,7 +173,7 @@ public:
     DelayedTask(time_t pnt) {
         time_t cur = time(0);
         if(difftime(pnt, cur) <= 0.) {
-            throw TaskInPastError("Attempt to set delayed task in the past");
+            throw TaskInPastError("Attempt to set delayed task to the past");
         }
         point = pnt;
         is_expired = false;
@@ -206,5 +206,6 @@ public:
         return false;
     }
 };
+
 
 #endif
