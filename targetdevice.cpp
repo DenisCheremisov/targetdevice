@@ -175,6 +175,7 @@ int TargetDeviceDriver::line_get(int lineno) {
     if(getline(parse_buf, token, ',')) {
         return atol(token.c_str());
     }
+    return 0;
 }
 
 
