@@ -22,7 +22,7 @@ NamedResults* Executor::execute() throw() {
 }
 
 
-Schedule::~Schedule() throw() {
+ListSchedule::~ListSchedule() throw() {
     for(list<BaseTask*>::iterator it = items.begin();
         it != items.end(); it++) {
         delete *it;
@@ -30,7 +30,7 @@ Schedule::~Schedule() throw() {
 }
 
 
-Commands *Schedule::get_commands() {
+Commands *ListSchedule::get_commands() {
     auto_ptr<Commands> result(new Commands);
 
     for(list<BaseTask*>::iterator it = items.begin();
@@ -44,7 +44,7 @@ Commands *Schedule::get_commands() {
 }
 
 
-void Schedule::add_item(BaseTask *item) {
+ListSchedule& ListSchedule::operator<<(BaseTask *item) {
     // for(list<BaseTask*>::iterator it = items.begin();
     //     it != items.end(); it++) {
     //     if(item->get_command()->expired()) {
@@ -55,10 +55,11 @@ void Schedule::add_item(BaseTask *item) {
     //     }
     // }
     items.push_back(item);
+    return *this;
 }
 
 
-void Schedule::remove_expired() {
+void ListSchedule::remove_expired() {
     list<BaseTask*>::iterator it = items.begin();
     while(it != items.end()) {
         if((*it)->expired()) {
@@ -67,5 +68,45 @@ void Schedule::remove_expired() {
         } else {
             it++;
         }
+    }
+}
+
+
+NamedSchedule::~NamedSchedule() throw() {
+    for(NamedSchedule::iterator it = this->begin();
+        it != this->end(); it++) {
+        delete it->second;
+    }
+}
+
+
+Commands *NamedSchedule::get_commands() {
+    auto_ptr<Commands> result(new Commands);
+
+    for(NamedSchedule::iterator it = this->begin();
+        it != this->end(); it++) {
+        auto_ptr<Commands> src(it->second->get_commands());
+        result->splice(result->end(), *src);
+    }
+
+    return result.release();
+}
+
+
+NamedSchedule& NamedSchedule::set_schedule(string name, BaseSchedule *sched) {
+    NamedSchedule::iterator it = this->find(name);
+    if(it != this->end()) {
+        delete it->second;
+    }
+    (*this)[name] = sched;
+    return *this;
+}
+
+
+void NamedSchedule::remove_expired() {
+    NamedSchedule::iterator it = this->begin();
+    for(NamedSchedule::iterator it = this->begin();
+        it != this->end(); it++) {
+        it->second->remove_expired();
     }
 }

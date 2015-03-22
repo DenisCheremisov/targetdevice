@@ -73,12 +73,11 @@ public:
 };
 
 
-BOOST_AUTO_TEST_CASE(test_schedule) {
-    Schedule sched;
+BOOST_AUTO_TEST_CASE(test_list_schedule) {
+    ListSchedule sched;
 
     for(int i = 0; i < 6; i++) {
-        sched.add_item(new EvenTask);
-        sched.add_item(new OddTask);
+        sched << new EvenTask << new OddTask;
     }
 
     Commands *nores;
@@ -99,6 +98,59 @@ BOOST_AUTO_TEST_CASE(test_schedule) {
     exec = new Executor(nores, &res);
     delete exec->execute();
     BOOST_CHECK_EQUAL(TestCommand::counter, 18);
+    delete exec;
+    delete nores;
+}
+
+
+BOOST_AUTO_TEST_CASE(test_general_schedule) {
+    ListSchedule *s1, *s2, *s3, *s4;
+    s1 = new ListSchedule;
+    s2 = new ListSchedule;
+    s3 = new ListSchedule;
+    s4 = new ListSchedule;
+    for(int i = 0; i < 6; i++) {
+        *s1 << new EvenTask << new OddTask;
+        *s2 << new EvenTask << new OddTask;
+        *s3 << new EvenTask << new OddTask;
+        *s4 << new EvenTask << new OddTask;
+    }
+
+    NamedSchedule sched;
+    sched
+        .set_schedule("opt1", s1)
+        .set_schedule("opt2", s2)
+        .set_schedule("opt3", s3);
+
+    Commands *nores;
+    NamedCommands res;
+
+    TestCommand::counter = 0;
+    nores = sched.get_commands();
+    BOOST_CHECK_EQUAL(nores->size(), 12*3);
+    Executor *exec = new Executor(nores, &res);
+    delete exec->execute();
+    BOOST_CHECK_EQUAL(TestCommand::counter, 12*3);
+    delete exec;
+    delete nores;
+
+    sched.remove_expired();
+    sched.set_schedule("opt4", s4);
+    nores = sched.get_commands();
+    BOOST_CHECK_EQUAL(nores->size(), 6*3 + 12);
+    exec = new Executor(nores, &res);
+    delete exec->execute();
+    BOOST_CHECK_EQUAL(TestCommand::counter, 12*3 + 6*3 + 12);
+    delete exec;
+    delete nores;
+
+    TestCommand::counter = 0;
+    sched.remove_expired();
+    nores = sched.get_commands();
+    BOOST_CHECK_EQUAL(nores->size(), 6*4);
+    exec = new Executor(nores, &res);
+    delete exec->execute();
+    BOOST_CHECK_EQUAL(TestCommand::counter, 6*4);
     delete exec;
     delete nores;
 }

@@ -132,14 +132,33 @@ public:
 };
 
 
-class Schedule {
+
+class BaseSchedule {
+public:
+    virtual ~BaseSchedule() throw() {};
+    virtual Commands *get_commands() = 0;
+    virtual void remove_expired() = 0;
+};
+
+
+class ListSchedule: public BaseSchedule {
 private:
     std::list<BaseTask*> items;
 
 public:
-    virtual ~Schedule() throw();
+    virtual ~ListSchedule() throw();
     Commands *get_commands();
-    void add_item(BaseTask *item);
+    ListSchedule& operator<<(BaseTask *item);
+    void remove_expired();
+};
+
+
+class NamedSchedule: public BaseSchedule,
+                     protected std::map<std::string, BaseSchedule*> {
+public:
+    virtual ~NamedSchedule() throw();
+    Commands *get_commands();
+    NamedSchedule& set_schedule(std::string name, BaseSchedule *sched);
     void remove_expired();
 };
 

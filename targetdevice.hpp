@@ -81,9 +81,9 @@ public:
 
         buf << "Cannot to ";
         switch(op) {
-        TARGETDEVICE_WRITE:
+        case TARGETDEVICE_WRITE:
             buf << "write into " << lineno;
-        TARGETDEVICE_READ:
+        case TARGETDEVICE_READ:
             buf << "read from " << lineno;
         }
         message_data = buf.str();
