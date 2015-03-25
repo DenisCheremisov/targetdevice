@@ -23,8 +23,8 @@ NamedResults* Executor::execute() throw() {
 
 
 ListSchedule::~ListSchedule() throw() {
-    for(list<BaseTask*>::iterator it = items.begin();
-        it != items.end(); it++) {
+    for(ListSchedule::iterator it = this->begin();
+        it != this->end(); it++) {
         delete *it;
     }
 }
@@ -33,8 +33,8 @@ ListSchedule::~ListSchedule() throw() {
 Commands *ListSchedule::get_commands() {
     auto_ptr<Commands> result(new Commands);
 
-    for(list<BaseTask*>::iterator it = items.begin();
-        it != items.end(); it++) {
+    for(ListSchedule::iterator it = this->begin();
+        it != this->end(); it++) {
         if((*it)->ready()) {
             result->push_back((*it)->get_command());
         }
@@ -54,17 +54,17 @@ ListSchedule& ListSchedule::operator<<(BaseTask *item) {
     //         return;
     //     }
     // }
-    items.push_back(item);
+    this->push_back(item);
     return *this;
 }
 
 
 void ListSchedule::remove_expired() {
-    list<BaseTask*>::iterator it = items.begin();
-    while(it != items.end()) {
+    ListSchedule::iterator it = this->begin();
+    while(it != this->end()) {
         if((*it)->expired()) {
             delete *it;
-            items.erase(it++);
+            this->erase(it++);
         } else {
             it++;
         }

@@ -141,10 +141,7 @@ public:
 };
 
 
-class ListSchedule: public BaseSchedule {
-private:
-    std::list<BaseTask*> items;
-
+class ListSchedule: public BaseSchedule, protected std::list<BaseTask*> {
 public:
     virtual ~ListSchedule() throw();
     Commands *get_commands();
