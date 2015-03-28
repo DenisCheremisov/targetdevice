@@ -11,9 +11,9 @@ Drivers::~Drivers() throw() {
 }
 
 
-Drivers::Drivers(config_drivers_t *conf) {
-    for(config_drivers_t::iterator it = conf->begin();
-        it != conf->end(); it++) {
+Drivers::Drivers(const config_drivers_t &conf) {
+    for(config_drivers_t::const_iterator it = conf.begin();
+        it != conf.end(); it++) {
         SerialDriver *driver_conf = dynamic_cast<SerialDriver*>(it->second);
         if(driver_conf != NULL) {
             serials[it->first] = new TargetDeviceDriver(driver_conf->path());
@@ -55,26 +55,34 @@ double DeviceTemperature::get_temperature() {
 }
 
 
-Devices::Devices(Drivers &drivers, config_devices_t *conf) {
-    for(config_devices_t::iterator it = conf->begin();
-        it != conf->end(); it++) {
+Devices::~Devices() throw() {
+    for(map<string, device_reference_t*>::iterator it = devices.begin();
+        it != devices.end(); it++) {
+        delete it->second;
+    }
+}
+
+
+Devices::Devices(Drivers &drivers, const config_devices_t &conf) {
+    for(config_devices_t::const_iterator it = conf.begin();
+        it != conf.end(); it++) {
         switch(it->second->id()) {
         case DEVICE_SWITCHER: {
             Switcher *sw = dynamic_cast<Switcher*>(it->second);
             devices[it->first] =
-                device_reference_t(new DeviceSwitcher(drivers, sw));
+                new device_reference_t(new DeviceSwitcher(drivers, sw));
             break;
         }
         case DEVICE_THERMOSWITCHER: {
             Thermoswitcher *trm = dynamic_cast<Thermoswitcher*>(it->second);
             devices[it->first] =
-                device_reference_t(new DeviceTemperature(drivers, trm));
+                new device_reference_t(new DeviceTemperature(drivers, trm));
             break;
         }
         case DEVICE_BOILER: {
             Boiler *blr = dynamic_cast<Boiler*>(it->second);
             devices[it->first] =
-                device_reference_t(new DeviceBoiler(drivers, blr));
+                new device_reference_t(new DeviceBoiler(drivers, blr));
             break;
         }
         default:
@@ -84,6 +92,6 @@ Devices::Devices(Drivers &drivers, config_devices_t *conf) {
 }
 
 
-device_reference_t& Devices::device(string name) {
+device_reference_t *Devices::device(string name) {
     return devices.at(name);
 }

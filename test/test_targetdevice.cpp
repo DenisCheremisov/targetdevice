@@ -1,8 +1,10 @@
+#define BOOST_TEST_IGNORE_NON_ZERO_CHILD_CODE
 #define BOOST_TEST_IGNORE_SIGKILL
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE TargetDeviceDriver
 
 #include <cstdio>
+#include <unistd.h>
 
 #include <boost/test/unit_test.hpp>
 
@@ -15,7 +17,9 @@ BOOST_AUTO_TEST_CASE(test_no_serial_device) {
 
 BOOST_AUTO_TEST_CASE(test_correct_serial_device) {
     FILE *fp;
-    fp = popen("python3 scripts/virtserial.py", "r");
+    std::stringstream buf;
+    buf << "python3 scripts/virtserial.py " << getpid();
+    fp = popen(buf.str().c_str(), "r");
     if(fp == NULL) {
         throw "Cannot start the virtual serial device";
     }

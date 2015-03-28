@@ -1,7 +1,6 @@
 #ifndef _GLOBALS_HPP_INCLUDED_
 #define _GLOBALS_HPP_INCLUDED_
 
-
 #include "confparser.hpp"
 #include "targetdevice.hpp"
 
@@ -11,7 +10,7 @@ private:
 
 public:
     virtual ~Drivers() throw();
-    Drivers(config_drivers_t *conf);
+    Drivers(const config_drivers_t &conf);
 
     TargetDeviceDriver* serial(std::string driver_name);
 };
@@ -44,8 +43,9 @@ public:
 
 class DeviceBoiler: public DeviceSwitcher, public DeviceTemperature {
 public:
-    ~DeviceBoiler() throw() {};
-    DeviceBoiler(Drivers &drivers,  Boiler *conf);
+    DeviceBoiler(Drivers &drivers,  Boiler *conf):
+        DeviceSwitcher(drivers, conf),
+        DeviceTemperature(drivers, conf) {};
 };
 
 
@@ -59,23 +59,15 @@ public:
     };
     void (device_reference_t::*destructor) ();
 
-#define DESTRUCTOR(member, type) throw()                \
-    { if(member != (type*)NULL) delete member; }
-
-    void destruct_switcher() DESTRUCTOR(switcher, DeviceSwitcher);
-    void destruct_temperature() DESTRUCTOR(temperature, DeviceTemperature);
-    void destruct_boiler() DESTRUCTOR(boiler, DeviceBoiler);
+    void destruct_switcher() throw() { delete switcher; };
+    void destruct_temperature() throw() { delete temperature; };
+    void destruct_boiler() throw() { delete boiler; };
     void destructor_void() throw() {};
-#undef DESTRUCTOR
 
     device_reference_t():
         type(DEVICE_UNDEFINED),
         destructor(&device_reference_t::destructor_void) {};
-    // device_reference_t(const device_reference_t &d):
-    //     type(d.type),
-    //     switcher(d.switcher),
-    //     destructor(d.destructor) {};
-    device_reference_t(DeviceSwitcher *swt): type(DEVICE_BOILER),
+    device_reference_t(DeviceSwitcher *swt): type(DEVICE_SWITCHER),
                                              switcher(swt),
                                              destructor(&device_reference_t::destruct_switcher) {};
     device_reference_t(DeviceTemperature *temp): type(DEVICE_THERMOSWITCHER),
@@ -93,12 +85,12 @@ public:
 
 class Devices {
 private:
-    std::map<std::string, device_reference_t> devices;
+    std::map<std::string, device_reference_t*> devices;
 
 public:
-    virtual ~Devices() throw() {};
-    Devices(Drivers &drivers, config_devices_t *conf);
+    virtual ~Devices() throw();
+    Devices(Drivers &drivers, const config_devices_t &conf);
 
-    device_reference_t& device(std::string name);
+    device_reference_t *device(std::string name);
 };
 #endif

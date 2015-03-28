@@ -34,3 +34,6 @@ test_runtime: runtime.o test/test_runtime.cpp
 
 test_cron: cron.o test/test_cron.cpp
 	$(COMPILE) -o test_cron cron.o test/test_cron.cpp $(TESTFLAGS)
+
+test_confbind: confbind.o targetdevice.o confparser.o test/test_confbind.cpp
+	$(COMPILE) -o test_confbind confbind.o targetdevice.o confparser.o test/test_confbind.cpp $(TESTFLAGS) -lyaml

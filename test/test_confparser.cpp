@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(test_conf_parsing) {
     fp = fopen(CONF_TEST_FILE, "r");
     if(fp == NULL) {
         perror(CONF_TEST_FILE);
-        throw runtime_error(string("Cannot open sample file: ") + YAML_TEST_FILE);
+        throw runtime_error(string("Cannot open sample file: ") + CONF_TEST_FILE);
     }
 
     MapElement *res, *tmp, *deep;

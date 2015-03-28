@@ -262,19 +262,41 @@ class Serial_FW1(metaclass=MetaSerial):
 
 
 def main():
-    master, slave = pty.openpty()
-    port_name = os.ttyname(slave)
+    iterator = iter_main()
+    port_name = next(iterator)
     print('-'*80)
     print(port_name)
     os.sys.stdout.flush()
+    for i in iterator:
+        pass
+
+
+def iter_main():
+    master, slave = pty.openpty()
+    port_name = os.ttyname(slave)
+    yield port_name
 
     ser = serial.Serial(port_name, baudrate=115200)
     virtser = Serial_FW1()
+
+    if len(os.sys.argv) > 1:
+        ppid = int(os.sys.argv[1])
+    else:
+        ppid = None
 
     while True:
         data = os.read(master, 1000)
         result = virtser.process(data.decode('ASCII'))
         os.write(master, (result).encode('ASCII'))
+
+        if ppid:
+            try:
+                os.kill(ppid, 0)
+            except OSError:
+                return
+
+        yield
+
 
 
 if __name__ == '__main__':
