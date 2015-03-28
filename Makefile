@@ -17,6 +17,9 @@ runtime.o: runtime.cpp runtime.hpp
 cron.o: cron.cpp cron.hpp
 	$(COMPILE) -c cron.cpp
 
+confbind.o: confbind.cpp confbind.hpp
+	$(COMPILE) -c confbind.cpp
+
 clean:
 	rm *.o test_*
 

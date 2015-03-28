@@ -32,30 +32,7 @@ public:
 };
 
 
-class Boiler: public BaseDevice {
-private:
-    serial_link_t _relay, _temperature;
-
-public:
-    Boiler(serial_link_t rel, serial_link_t temp): _relay(rel), _temperature(temp) {};
-
-    device_type_t id() const throw() {
-        return DEVICE_BOILER;
-    };
-
-    ~Boiler() throw() {};
-
-    const serial_link_t& relay() const throw() {
-        return _relay;
-    }
-
-    const serial_link_t& temperature() const throw() {
-        return _temperature;
-    }
-};
-
-
-class Switcher: public BaseDevice {
+class Switcher: public virtual BaseDevice {
 private:
     serial_link_t _relay;
 
@@ -74,12 +51,12 @@ public:
 };
 
 
-class Thermoswitcher: public BaseDevice {
+class Thermoswitcher: public virtual BaseDevice {
 private:
-    serial_link_t _relay, _temperature;
+    serial_link_t _temperature;
 
 public:
-    Thermoswitcher(serial_link_t rel, serial_link_t temp): _relay(rel), _temperature(temp) {};
+    Thermoswitcher(serial_link_t temp): _temperature(temp) {};
 
     device_type_t id() const throw() {
         return DEVICE_THERMOSWITCHER;
@@ -87,14 +64,21 @@ public:
 
     ~Thermoswitcher() throw() {};
 
-    const serial_link_t& relay() const throw() {
-        return _relay;
-    }
-
     const serial_link_t& temperature() const throw() {
         return _temperature;
     }
 };
 
+
+class Boiler: public Switcher, public Thermoswitcher {
+public:
+    Boiler(serial_link_t rel, serial_link_t temp): Switcher(rel), Thermoswitcher(temp) {};
+
+    device_type_t id() const throw() {
+        return DEVICE_BOILER;
+    };
+
+    ~Boiler() throw() {};
+};
 
 #endif

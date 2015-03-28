@@ -129,6 +129,7 @@ MapElement *raw_conf_parse(FILE *fp) {
 
         case YAML_MAPPING_START_EVENT: break;
         case YAML_MAPPING_END_EVENT: break;
+        default: ;
         }
 
         if(event.type != YAML_STREAM_END_EVENT) {
@@ -166,12 +167,14 @@ public:
 
         buf << "no required field " << key << " found in " << section_name << " section";
         raise_exception(parent, buf.str());
+        return buf.str();
     }
 
     string wrong_type_exception(ScalarElement key) {
         stringstream buf;
         buf << "field " << key << " must define a " << proper_type << " not " << wrong_type;
         raise_exception(key, buf.str());
+        return buf.str();
     }
 
     T &get_field(MapElement &mapping, ScalarElement parent, string key) {
@@ -390,7 +393,7 @@ Config *config_parse(MapElement *_rawconf) {
             serial_link_t temperature = scalar_getter.get_link(deviceconf, device_parent, "temperature",
                                                                drvrs,
                                                                adc_used, ADC_LOWER_BOUND, ADC_UPPER_BOUND);
-            (*dvcs)[device_parent] = new Thermoswitcher(relay, temperature);
+            (*dvcs)[device_parent] = new Thermoswitcher(temperature);
         } else {
             throw ParserError(device_type, device_type + " not supported");
         }

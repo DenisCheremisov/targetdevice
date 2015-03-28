@@ -28,7 +28,6 @@ BOOST_AUTO_TEST_CASE(test_raw_parsing) {
     res = dynamic_cast<MapElement*>(raw_conf_parse(fp));
 
     BOOST_CHECK_EQUAL(res->size(), 3);
-    BOOST_REQUIRE_THROW(dynamic_cast<ScalarElement&>(*(*res)["connection"]), bad_cast);
     tmp = dynamic_cast<MapElement*>((*res)["connection"]);
     BOOST_CHECK_EQUAL(tmp->size(), 3);
     BOOST_CHECK_EQUAL(*dynamic_cast<ScalarElement*>((*tmp)["host"]), "localhost");
@@ -129,8 +128,6 @@ BOOST_AUTO_TEST_CASE(test_conf_parsing) {
     BOOST_CHECK_EQUAL(pswitcher->relay().port, 2);
     Thermoswitcher *ptermo = dynamic_cast<Thermoswitcher*>(conf->devices().at("temperature"));
     BOOST_CHECK(ptermo != (Thermoswitcher*)NULL);
-    BOOST_CHECK_EQUAL(ptermo->relay().driver, "targetdevice");
-    BOOST_CHECK_EQUAL(ptermo->relay().port, 4);
     BOOST_CHECK_EQUAL(ptermo->temperature().driver, "targetdevice");
     BOOST_CHECK_EQUAL(ptermo->temperature().port, 1);
 
