@@ -136,8 +136,7 @@ BOOST_AUTO_TEST_CASE(test_conf_parsing) {
 
 
 void parse_test_fnc(FILE *fp) {
-    MapElement *res = dynamic_cast<MapElement*>(raw_conf_parse(fp));
-    config_parse(res);
+    auto_ptr<MapElement> res(dynamic_cast<MapElement*>(raw_conf_parse(fp)));
 }
 
 
