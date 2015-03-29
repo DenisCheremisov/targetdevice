@@ -195,13 +195,12 @@ public:
         }
     }
 
-    string no_key_exception(ScalarElement parent, string key)  {
+    void no_key_exception(ScalarElement parent, string key)  {
         stringstream buf;
         string section_name = (parent.length() > 0)?parent:"root";
 
         buf << "no required field " << key << " found in " << section_name << " section";
         raise_exception(parent, buf.str());
-        return buf.str();
     }
 
     string wrong_type_exception(ScalarElement key) {
