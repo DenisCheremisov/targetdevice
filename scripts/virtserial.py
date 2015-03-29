@@ -1,6 +1,7 @@
 import os
 import pty
 import serial
+import select
 import inspect
 
 # Hardware limits
@@ -261,14 +262,15 @@ class Serial_FW1(metaclass=MetaSerial):
         return handler(self, *args)
 
 
-def main():
+def main(stop_if_not_requested):
     iterator = iter_main()
     port_name = next(iterator)
     print('-'*80)
     print(port_name)
     os.sys.stdout.flush()
     for i in iterator:
-        pass
+        if not i and stop_if_not_requested:
+            break
 
 
 def iter_main():
@@ -279,15 +281,14 @@ def iter_main():
     ser = serial.Serial(port_name, baudrate=115200)
     virtser = Serial_FW1()
 
-    if len(os.sys.argv) > 1:
-        ppid = int(os.sys.argv[1])
-    else:
-        ppid = None
-
+    ppid = os.getppid()
     while True:
-        data = os.read(master, 1000)
-        result = virtser.process(data.decode('ASCII'))
-        os.write(master, (result).encode('ASCII'))
+        r, w, e = select.select([master], [], [], 1)
+        data = ''
+        if master in r:
+            data = os.read(master, 1000)
+            result = virtser.process(data.decode('ASCII'))
+            os.write(master, (result).encode('ASCII'))
 
         if ppid:
             try:
@@ -295,9 +296,9 @@ def iter_main():
             except OSError:
                 return
 
-        yield
+        yield bool(data)
 
 
 
 if __name__ == '__main__':
-    main()
+    main(len(os.sys.argv) > 1)
