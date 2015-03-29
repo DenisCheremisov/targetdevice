@@ -8,10 +8,10 @@
 using namespace std;
 
 
-ParserError::ParserError(const yaml_event_t &event, string message) {
+ParserError::ParserError(yaml_event_t *event, string message) {
     stringstream buf;
-    buf << "Error at (" << event.start_mark.line + 1 << "," << event.start_mark.column <<
-        ")-(" << event.end_mark.line + 1 << "," << event.end_mark.column << "): " << message;
+    buf << "Error at (" << event->start_mark.line + 1 << "," << event->start_mark.column <<
+        ")-(" << event->end_mark.line + 1 << "," << event->end_mark.column << "): " << message;
 
     this->message = buf.str();
 }
@@ -27,49 +27,82 @@ ParserError::ParserError(const ScalarElement &token, string message) {
 }
 
 
-void token_proceed(yaml_parser_t &parser, yaml_event_t &event) {
-    yaml_event_t new_event;
-    if(!yaml_parser_parse(&parser, &new_event)) {
-        throw ParserError(event, "parsing error after this token");
+class Parser: public yaml_parser_t {
+private:
+    bool initialized;
+
+public:
+    Parser(): initialized(false) {};
+    ~Parser() throw() {
+        if(initialized) {
+            yaml_parser_delete(this);
+        }
     }
-    event = new_event;
-}
-
-
-void token_type_match(yaml_event_t &event, yaml_event_type_e type_name, std::string message) {
-    if(event.type != type_name) {
-        throw ParserError(event, message);
+    bool initialize() {
+        initialized = (bool)yaml_parser_initialize(this);
+        return initialized;
     }
-}
+};
 
 
-ParsedElement *parse_all_config(yaml_parser_t &parser) {
-    yaml_event_t event;
+class Event: public yaml_event_t {
+private:
+    bool initialized;
+
+public:
+    Event(): initialized(false) {};
+    ~Event() throw() {
+        if(initialized) {
+            yaml_event_delete(this);
+        }
+    }
+    void proceed(Parser &parser) {
+        if(!yaml_parser_parse(&parser, this)) {
+            throw ParserError(this, "parsing error after this token");
+        }
+        initialized = true;
+    }
+    void match(yaml_event_type_e type_name, std::string message) {
+        if(type != type_name) {
+            throw ParserError(this, message);
+        }
+    }
+    void free() throw() {
+        if(initialized) {
+            yaml_event_delete(this);
+            initialized = false;
+        }
+    }
+};
+
+
+ParsedElement *parse_all_config(Parser &parser) {
+    Event event;
     ParsedElement *value;
     MapElement *result;
 
-    token_proceed(parser, event);
+    event.proceed(parser);
     switch(event.type) {
     case YAML_SCALAR_EVENT:
-        return new ScalarElement(event);
+        return new ScalarElement(static_cast<yaml_event_t*>(&event));
         break;
     case YAML_MAPPING_START_EVENT:
         result = new MapElement;
         break;
     default:
-        throw UnsupportedConstructionError(event, "only mappings and strings are supported");
+        throw UnsupportedConstructionError(&event, "only mappings and strings are supported");
     }
 
     MapElement &res = *result;
     try {
         while(true) {
-            token_proceed(parser, event);
+            event.proceed(parser);
             if(event.type == YAML_MAPPING_END_EVENT) {
                 break;
             }
-            token_type_match(event, YAML_SCALAR_EVENT, "Section name expected");
+            event.match(YAML_SCALAR_EVENT, "Section name expected");
 
-            ScalarElement key(event);
+            ScalarElement key(static_cast<yaml_event_t*>(&event));
             MapElement::iterator it = res.find(key);
             if(it != res.end()) {
                 stringstream buf;
@@ -79,7 +112,7 @@ ParsedElement *parse_all_config(yaml_parser_t &parser) {
                 throw ParserError(key, buf.str());
             }
 
-            res[ScalarElement(event)] = parse_all_config(parser);
+            res[ScalarElement(static_cast<yaml_event_t*>(&event))] = parse_all_config(parser);
         }
     } catch(...) {
         delete result;
@@ -91,12 +124,12 @@ ParsedElement *parse_all_config(yaml_parser_t &parser) {
 
 
 MapElement *raw_conf_parse(FILE *fp) {
-    yaml_parser_t parser;
-    yaml_event_t  event;
+    Parser parser;
+    Event event;
     MapElement *result;
 
     /* Initialize parser */
-    if(!yaml_parser_initialize(&parser)) {
+    if(!parser.initialize()) {
         fputs("Failed to initialize parser!\n", stderr);
         exit(EXIT_FAILURE);
     }
@@ -106,7 +139,7 @@ MapElement *raw_conf_parse(FILE *fp) {
 
     result = NULL;
     do {
-        token_proceed(parser, event);
+        event.proceed(parser);
 
         switch(event.type) {
         case YAML_NO_EVENT: break;
@@ -116,7 +149,7 @@ MapElement *raw_conf_parse(FILE *fp) {
         case YAML_DOCUMENT_START_EVENT:;
             result = dynamic_cast<MapElement*>(parse_all_config(parser));
             if(result == (MapElement*)NULL) {
-                throw ParserError(event, "Must be a mapping");
+                throw ParserError(&event, "Must be a mapping");
             }
             break;
 
@@ -124,7 +157,7 @@ MapElement *raw_conf_parse(FILE *fp) {
 
         case YAML_SEQUENCE_START_EVENT:
         case YAML_SEQUENCE_END_EVENT:
-            UnsupportedConstructionError(event, "Sequences are not allowed");
+            UnsupportedConstructionError(&event, "Sequences are not allowed");
             break;
 
         case YAML_MAPPING_START_EVENT: break;
@@ -133,6 +166,7 @@ MapElement *raw_conf_parse(FILE *fp) {
         }
 
         if(event.type != YAML_STREAM_END_EVENT) {
+            event.free();
             yaml_event_delete(&event);
         }
     } while(event.type != YAML_STREAM_END_EVENT);

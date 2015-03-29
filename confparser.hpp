@@ -28,11 +28,11 @@ class ScalarElement: public ParsedElement, public std::string {
     std::string value;
 
 public:
-    ScalarElement(yaml_event_t &event): std::string((char*)event.data.scalar.value) {
-        _start_pos = location_t(event.start_mark.line + 1,
-                              event.start_mark.column);
-        _end_pos = location_t(event.end_mark.line + 1,
-                             event.end_mark.column);
+    ScalarElement(yaml_event_t *event): std::string((char*)event->data.scalar.value) {
+        _start_pos = location_t(event->start_mark.line + 1,
+                              event->start_mark.column);
+        _end_pos = location_t(event->end_mark.line + 1,
+                             event->end_mark.column);
     }
     ScalarElement(std::string &token): std::string(token) {};
     ScalarElement(const char *data): std::string(data) {};
@@ -70,7 +70,7 @@ private:
 
 public:
     ParserError(std::string msg): message(msg) {};
-    ParserError(const yaml_event_t &event, std::string message);
+    ParserError(yaml_event_t *event, std::string message);
     ParserError(const ScalarElement &token, std::string message);
     ParserError(const ParserError &a): message(a.message) {};
     ~ParserError() throw() {};
@@ -82,7 +82,7 @@ public:
 
 class UnsupportedConstructionError: public ParserError {
 public:
-    UnsupportedConstructionError(const yaml_event_t &event, std::string message):
+    UnsupportedConstructionError(yaml_event_t *event, std::string message):
         ParserError(event, message) {};
 };
 
