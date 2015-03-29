@@ -113,6 +113,7 @@ ParsedElement *parse_all_config(Parser &parser) {
             }
 
             res[ScalarElement(static_cast<yaml_event_t*>(&event))] = parse_all_config(parser);
+            event.free();
         }
     } catch(...) {
         delete result;
@@ -167,7 +168,6 @@ MapElement *raw_conf_parse(FILE *fp) {
 
         if(event.type != YAML_STREAM_END_EVENT) {
             event.free();
-            yaml_event_delete(&event);
         }
     } while(event.type != YAML_STREAM_END_EVENT);
     yaml_event_delete(&event);
