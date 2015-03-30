@@ -20,6 +20,9 @@ cron.o: cron.cpp cron.hpp
 confbind.o: confbind.cpp confbind.hpp
 	$(COMPILE) -c confbind.cpp
 
+commands.o: commands.cpp commands.hpp
+	$(COMPILE) -c commands.cpp
+
 clean:
 	rm *.o test_*
 
