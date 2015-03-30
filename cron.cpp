@@ -78,10 +78,11 @@ bool RangeMatcher::match(int value) throw() {
 }
 
 
-cron_time_t LocalDateTimeGenerator::get(int timestamp) {
+cron_time_t LocalDateTimeGenerator::get(time_t timestamp) {
     time_t stamp = timestamp;
     tm *dt = localtime(&stamp);
     cron_time_t res;
+    res.timestamp = timestamp;
     res.minute = dt->tm_min;
     res.hour = dt->tm_hour;
     res.wday = dt->tm_wday;

@@ -5,6 +5,7 @@
 #include <string>
 #include <climits>
 
+
 class BaseMatcher {
 public:
     virtual ~BaseMatcher() throw() {};
@@ -84,6 +85,7 @@ public:
 
 struct cron_time_t {
 public:
+    time_t timestamp;
     int minute, hour, wday, mday, month;
 };
 
@@ -91,14 +93,14 @@ public:
 class BaseDateTimeGenerator {
 public:
     virtual ~BaseDateTimeGenerator() throw() {};
-    virtual cron_time_t get(int timestamp) = 0;
+    virtual cron_time_t get(time_t timestamp) = 0;
 };
 
 
 class LocalDateTimeGenerator: public BaseDateTimeGenerator {
 public:
-    virtual ~LocalDateTimeGenerator() throw() {};
-    virtual cron_time_t get(int timestamp);
+    ~LocalDateTimeGenerator() throw() {};
+    cron_time_t get(time_t timestamp);
 };
 
 
@@ -109,7 +111,7 @@ private:
 public:
     virtual ~FrozenDateTimeGenerator() throw() {};
     FrozenDateTimeGenerator(cron_time_t val): value(val) {};
-    cron_time_t get(int timestamp) {
+    cron_time_t get(time_t timestamp) {
         return value;
     }
 };

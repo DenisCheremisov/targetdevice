@@ -107,8 +107,9 @@ BOOST_AUTO_TEST_CASE(test_datetime_generator) {
 class DummyDateTime: public BaseDateTimeGenerator {
 public:
     ~DummyDateTime() throw() {};
-    cron_time_t get(int timestamp) {
+    cron_time_t get(time_t timestamp) {
         cron_time_t res;
+        res.timestamp = timestamp;
         res.minute = 15;
         res.hour = 17;
         res.wday = 6;
