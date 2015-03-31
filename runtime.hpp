@@ -10,6 +10,12 @@
 #include <ctime>
 
 
+#include "cron.hpp"
+
+
+const int RUNTIME_WAKE_PAUSE = 5; //
+
+
 typedef enum {
     RESULT_SERIAL_ERROR,
     RESULT_SERIAL_WRONGLINE
@@ -94,18 +100,7 @@ public:
 typedef NamedEntity<Result> NamedResults;
 typedef NamedEntity<Command> NamedCommands;
 
-
-template <typename T>
-class ListEntity: public std::list<T*> {
-public:
-    ~ListEntity() throw() {
-        for(typename ListEntity<T>::iterator it = this->begin();
-            it != this->end(); it++) {
-            delete *it;
-        }
-    }
-};
-typedef ListEntity<Command> Commands;
+typedef std::list<Command*> Commands;
 
 
 class Executor {
@@ -122,31 +117,38 @@ public:
 };
 
 
-class BaseTask {
+class ScheduleError: public std::exception, std::string {
 public:
-    virtual ~BaseTask() throw() {};
-
-    virtual bool ready() throw() = 0;
-    virtual bool expired() throw() = 0;
-    virtual Command *get_command() throw() = 0;
+    ~ScheduleError() throw() {};
+    ScheduleError(const std::string &msg): std::string(msg) {};
+    const char *what() const throw() {
+        return this->c_str();
+    }
 };
 
+
+class ScheduleSetupError: public ScheduleError {
+public:
+    ~ScheduleSetupError() throw() {};
+    ScheduleSetupError(const std::string &msg): ScheduleError(msg) {};
+};
 
 
 class BaseSchedule {
 public:
     virtual ~BaseSchedule() throw() {};
-    virtual Commands *get_commands() = 0;
-    virtual void remove_expired() = 0;
+    virtual Commands *get_commands(time_t tm) = 0;
+    virtual bool is_expired() = 0;
 };
 
 
-class ListSchedule: public BaseSchedule, protected std::list<BaseTask*> {
+
+class ListSchedule: public BaseSchedule, protected std::list<BaseSchedule*> {
 public:
     virtual ~ListSchedule() throw();
-    Commands *get_commands();
-    ListSchedule& operator<<(BaseTask *item);
-    void remove_expired();
+    Commands *get_commands(time_t tm);
+    ListSchedule& operator<<(BaseSchedule *item);
+    bool is_expired();
 };
 
 
@@ -154,74 +156,55 @@ class NamedSchedule: public BaseSchedule,
                      protected std::map<std::string, BaseSchedule*> {
 public:
     virtual ~NamedSchedule() throw();
-    Commands *get_commands();
+    Commands *get_commands(time_t tm);
     NamedSchedule& set_schedule(std::string name, BaseSchedule *sched);
-    void remove_expired();
-};
-
-//
-// Task implementation
-
-class TaskError: public std::exception, std::string {
-public:
-    ~TaskError() throw() {};
-    TaskError(const std::string &msg): std::string(msg) {};
-    const char *what() const throw() {
-        return this->c_str();
-    }
+    bool is_expired();
 };
 
 
-class TaskInPastError: public TaskError {
-public:
-    ~TaskInPastError() throw() {};
-    TaskInPastError(const std::string &msg): TaskError(msg) {};
-};
-
-
-class DelayedTask: public BaseTask {
+class SingleCommandSchedule: public BaseSchedule {
 private:
-    time_t point;
-    bool is_expired;
+    Command *command;
+    time_t start_point;
+    int restart_period;
+    bool expired;
 
 public:
-    virtual ~DelayedTask() throw() {};
-    DelayedTask(time_t pnt) {
-        time_t cur = time(0);
-        if(difftime(pnt, cur) <= 0.) {
-            throw TaskInPastError("Attempt to set delayed task to the past");
-        }
-        point = pnt;
-        is_expired = false;
+    ~SingleCommandSchedule() throw() {
+        delete command;
     }
 
-    bool ready() throw() {
-        time_t cur = time(0);
-        if(cur >= point) {
-            is_expired = true;
-            return true;
-        } else {
-            return false;
-        }
-    }
+    SingleCommandSchedule(Command *cmd, time_t start_point,
+                          int restart_period = -1);
 
-    bool expired() throw() {
-        return is_expired;
-    }
+    Commands *get_commands(time_t tm);
+    time_t get_start_point() {
+        return start_point;
+    };
+    bool is_expired();
 };
 
 
-class PermanentTask: public BaseTask {
+class CoupledCommandSchedule: public SingleCommandSchedule {
 private:
-    bool is_ready;
+    Command *coupled_command;
+    time_t coupled_point;
+    int coupled_interval;
+    bool on_coupling;
 
 public:
-    virtual ~PermanentTask() throw() {};
-
-    bool expired() throw() {
-        return false;
+    ~CoupledCommandSchedule() throw () {
+        delete coupled_command;
     }
-};
 
+    CoupledCommandSchedule(Command *cmd,
+                           time_t start_point,
+                           Command *coupled_command,
+                           int coupled_interval,
+                           int restart_period = -1);
+
+    Commands *get_commands(time_t tm);
+    bool is_expired();
+};
 
 #endif
