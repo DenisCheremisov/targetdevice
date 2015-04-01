@@ -135,7 +135,7 @@ SingleCommandSchedule::SingleCommandSchedule(Command *cmd,
             RUNTIME_WAKE_PAUSE*2 << " seconds, now it is only " << restart;
         throw ScheduleSetupError(buf.str());
     }
-    if(start <= time(NULL)) {
+    if(start > 0 && start <= time(NULL)) {
         throw ScheduleSetupError("Attempt to set a task to the past");
     }
     command = cmd;
