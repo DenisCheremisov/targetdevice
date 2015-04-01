@@ -80,6 +80,71 @@ BOOST_AUTO_TEST_CASE(test_single_command) {
 }
 
 
+BOOST_AUTO_TEST_CASE(test_single_command_forever) {
+    time_t ftr = future();
+
+    SingleCommandSchedule sched(new TestCommand, ftr, 1000);
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+    Commands *res = sched.get_commands(ftr + 1);
+    BOOST_CHECK_EQUAL(res->size(), 1);
+    delete res;
+
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+    res = sched.get_commands(ftr + 500);
+    BOOST_CHECK_EQUAL(res->size(), 0);
+    delete res;
+
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+    res = sched.get_commands(ftr + 1500);
+    BOOST_CHECK_EQUAL(res->size(), 1);
+    delete res;
+}
+
+
+BOOST_AUTO_TEST_CASE(test_coupled_command) {
+    CoupledCommandSchedule sched(new TestCommand, 0,
+                                 new TestCommand2, 600);
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+    Commands *res = sched.get_commands(1);
+    BOOST_CHECK_EQUAL(res->size(), 1);
+    delete res;
+
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+    res = sched.get_commands(1000);
+    BOOST_CHECK_EQUAL(res->size(), 1);
+    delete res;
+
+    BOOST_CHECK(sched.is_expired());
+}
+
+
+BOOST_AUTO_TEST_CASE(test_coupled_command_forever) {
+    CoupledCommandSchedule sched(new TestCommand, 0,
+                                 new TestCommand2, 600, 1000);
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+    Commands *res = sched.get_commands(1);
+    BOOST_CHECK_EQUAL(res->size(), 1);
+    delete res;
+
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+    res = sched.get_commands(700);
+    BOOST_CHECK_EQUAL(res->size(), 1);
+    delete res;
+
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+    res = sched.get_commands(900);
+    BOOST_CHECK_EQUAL(res->size(), 0);
+    delete res;
+
+    BOOST_CHECK_EQUAL(sched.is_expired(), false);
+    res = sched.get_commands(1100);
+    BOOST_CHECK_EQUAL(res->size(), 1);
+    delete res;
+}
+
+
 BOOST_AUTO_TEST_CASE(test_list_schedule) {
     ListSchedule sched;
     time_t ftr = future();
