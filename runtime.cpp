@@ -5,9 +5,12 @@
 
 using namespace std;
 
-
+pthread_mutex_t Executor::access = PTHREAD_MUTEX_INITIALIZER;
 NamedResults* Executor::execute() throw() {
-    for(list<Command*>::iterator it = commands.begin(); it != commands.end(); it++) {
+    pthread_mutex_lock(&Executor::access);
+
+    for(list<Command*>::iterator it = commands.begin();
+        it != commands.end(); it++) {
         delete (**it).execute();
     }
 
@@ -17,6 +20,8 @@ NamedResults* Executor::execute() throw() {
         Result *res = it->second->execute();
         (*results)[it->first] = res;
     }
+
+    pthread_mutex_unlock(&Executor::access);
 
     return results;
 }

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <typeinfo>
 #include <ctime>
+#include <pthread.h>
 
 
 const int RUNTIME_WAKE_PAUSE = 5; //
@@ -104,13 +105,14 @@ class Executor {
 private:
     Commands &commands;
     NamedCommands &named_commands;
+    static pthread_mutex_t access;
 
 public:
+    virtual ~Executor() throw() {};
+    NamedResults *execute() throw();
     Executor(Commands *cmds,
              NamedCommands *named_cmds):
         commands(*cmds), named_commands(*named_cmds) {};
-    virtual ~Executor() throw() {};
-    NamedResults *execute() throw();
 };
 
 

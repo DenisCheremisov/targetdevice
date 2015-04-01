@@ -30,7 +30,7 @@ test_confparser: confparser.o test/test_confparser.cpp targetdevice.o
 	$(COMPILE) -o test_confparser confparser.o targetdevice.o test/test_confparser.cpp $(TESTFLAGS) -lyaml
 
 test_runtime: runtime.o test/test_runtime.cpp
-	$(COMPILE) -o test_runtime runtime.o test/test_runtime.cpp $(TESTFLAGS)
+	$(COMPILE) -o test_runtime runtime.o test/test_runtime.cpp $(TESTFLAGS) -lpthread
 
 test_confbind: confbind.o targetdevice.o confparser.o test/test_confbind.cpp
 	$(COMPILE) -o test_confbind confbind.o targetdevice.o confparser.o test/test_confbind.cpp $(TESTFLAGS) -lyaml
