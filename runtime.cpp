@@ -159,6 +159,21 @@ bool SingleCommandSchedule::is_expired() {
 }
 
 
+CoupledCommandSchedule::~CoupledCommandSchedule() throw() {
+    if(on_coupling) {
+        /* Coupling means something important, thus we should
+           execute coupled command before the schedule removal
+        */
+        try {
+            delete coupled_command->execute();
+        } catch(...) {
+            ;// No luck
+        }
+    }
+    delete coupled_command;
+}
+
+
 CoupledCommandSchedule::CoupledCommandSchedule(Command *cmd,
                                                time_t start,
                                                Command *coupled_cmd,

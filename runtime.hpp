@@ -185,9 +185,7 @@ private:
     bool on_coupling;
 
 public:
-    ~CoupledCommandSchedule() throw () {
-        delete coupled_command;
-    }
+    ~CoupledCommandSchedule() throw ();
 
     CoupledCommandSchedule(Command *cmd,
                            time_t start_point,
