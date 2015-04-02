@@ -85,18 +85,14 @@ public:
 };
 
 
-template <typename T>
-class NamedEntity: public std::map<std::string, T*> {
+class Results: public std::list<Result*> {
 public:
-    ~NamedEntity() throw() {
-        for(typename NamedEntity<T>::iterator it = this->begin();
-            it != this->end(); it++) {
-            delete it->second;
+    ~Results() throw() {
+        for(Results::iterator it = this->begin(); it != this->end(); it++) {
+            delete *it;
         }
     }
 };
-typedef NamedEntity<Result> NamedResults;
-typedef NamedEntity<Command> NamedCommands;
 
 typedef std::list<Command*> Commands;
 
@@ -104,15 +100,12 @@ typedef std::list<Command*> Commands;
 class Executor {
 private:
     Commands &commands;
-    NamedCommands &named_commands;
     static pthread_mutex_t access;
 
 public:
     virtual ~Executor() throw() {};
-    NamedResults *execute() throw();
-    Executor(Commands *cmds,
-             NamedCommands *named_cmds):
-        commands(*cmds), named_commands(*named_cmds) {};
+    Results *execute() throw();
+    Executor(Commands *cmds): commands(*cmds) {};
 };
 
 

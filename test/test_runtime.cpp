@@ -40,25 +40,22 @@ time_t future() {
 
 
 BOOST_AUTO_TEST_CASE(test_runtime_executor) {
-    Commands nores;
+    Commands res;
     for(int i = 0; i < 10; i++) {
-        nores.push_back(new TestCommand);
+        res.push_back(new TestCommand);
     }
-    NamedCommands res;
-    res["1"] = new TestCommand;
-    res["2"] = new TestCommand;
-    res["3"] = new TestCommand;
 
-    Executor exec(&nores, &res);
+    Executor exec(&res);
     TestCommand::counter = 0;
-    NamedResults *out = exec.execute();
+    Results *out = exec.execute();
+    int i = 0;
+    for(Results::iterator it = out->begin();
+        it != out->end(); it++, i++) {
+        BOOST_CHECK_EQUAL(atol((**it).value().c_str()), i);
+    }
 
-    BOOST_CHECK_EQUAL(out->at("1")->value(), "10");
-    BOOST_CHECK_EQUAL(out->at("2")->value(), "11");
-    BOOST_CHECK_EQUAL(out->at("3")->value(), "12");
-
-    for(Commands::iterator it = nores.begin();
-        it != nores.end(); it++) {
+    for(Commands::iterator it = res.begin();
+        it != res.end(); it++) {
         delete *it;
     }
     delete out;
@@ -155,12 +152,11 @@ BOOST_AUTO_TEST_CASE(test_list_schedule) {
     }
 
     Commands *nores;
-    NamedCommands res;
 
     TestCommand::counter = 0;
     nores = sched.get_commands(ftr + 100);
     BOOST_CHECK_EQUAL(nores->size(), 12);
-    Executor *exec = new Executor(nores, &res);
+    Executor *exec = new Executor(nores);
     delete exec->execute();
     BOOST_CHECK_EQUAL(TestCommand::counter, 12);
     delete exec;
@@ -169,7 +165,7 @@ BOOST_AUTO_TEST_CASE(test_list_schedule) {
     BOOST_CHECK_EQUAL(sched.is_expired(), false);
     nores = sched.get_commands(ftr + 700);
     BOOST_CHECK_EQUAL(nores->size(), 6);
-    exec = new Executor(nores, &res);
+    exec = new Executor(nores);
     delete exec->execute();
     BOOST_CHECK_EQUAL(TestCommand::counter, 18);
     delete exec;
@@ -201,14 +197,13 @@ BOOST_AUTO_TEST_CASE(test_general_schedule) {
         .set_schedule("opt3", s3);
 
     Commands *nores;
-    NamedCommands res;
 
     TestCommand::counter = 0;
     TestCommand2::counter = 0;
     BOOST_CHECK_EQUAL(sched.is_expired(), false);
     nores = sched.get_commands(ftr + 100);
     BOOST_CHECK_EQUAL(nores->size(), 12*3);
-    Executor *exec = new Executor(nores, &res);
+    Executor *exec = new Executor(nores);
     delete exec->execute();
     BOOST_CHECK_EQUAL(TestCommand::counter, 12*3);
     delete exec;
@@ -218,7 +213,7 @@ BOOST_AUTO_TEST_CASE(test_general_schedule) {
     sched.set_schedule("opt4", s4);
     nores = sched.get_commands(ftr + 1000);
     BOOST_CHECK_EQUAL(nores->size(), 6*3 + 6);
-    exec = new Executor(nores, &res);
+    exec = new Executor(nores);
     delete exec->execute();
     BOOST_CHECK_EQUAL(TestCommand::counter, 12*3 + 6*3);
     BOOST_CHECK_EQUAL(TestCommand2::counter, 6);
@@ -230,7 +225,7 @@ BOOST_AUTO_TEST_CASE(test_general_schedule) {
     BOOST_CHECK_EQUAL(sched.is_expired(), false);
     nores = sched.get_commands(ftr + 1200);
     BOOST_CHECK_EQUAL(nores->size(), 6*3);
-    exec = new Executor(nores, &res);
+    exec = new Executor(nores);
     delete exec->execute();
     BOOST_CHECK_EQUAL(TestCommand::counter, 6*3);
     BOOST_CHECK_EQUAL(TestCommand2::counter, 0);
