@@ -20,6 +20,9 @@ confbind.o: confbind.cpp confbind.hpp
 commands.o: commands.cpp commands.hpp
 	$(COMPILE) -c commands.cpp
 
+background.o: background.cpp
+	$(COMPILE) -c background.cpp
+
 clean:
 	rm *.o test_*
 

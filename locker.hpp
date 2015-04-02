@@ -42,7 +42,8 @@ public:
 
 template <class T>
 class UnifiedLocker: public Locker<T, T> {
-    ;
+public:
+    UnifiedLocker(T *obj): Locker<T, T>(obj) {};
 };
 
 #endif
