@@ -100,7 +100,6 @@ typedef std::list<Command*> Commands;
 class Executor {
 private:
     Commands &commands;
-    static pthread_mutex_t access;
 
 public:
     virtual ~Executor() throw() {};

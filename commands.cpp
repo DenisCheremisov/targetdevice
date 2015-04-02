@@ -1,9 +1,11 @@
 #include "commands.hpp"
+#include "locker.hpp"
 
 
 Result *SwitcherOn::execute() throw() {
     try {
-        device->turn_on();
+        Locker<DeviceSwitcher, TargetDeviceDriver> cover(device);
+        cover->turn_on();
         return new IntResult(1);
     } catch(TargetDeviceInternalError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
@@ -17,7 +19,8 @@ Result *SwitcherOn::execute() throw() {
 
 Result *SwitcherOff::execute() throw() {
     try {
-        device->turn_off();
+        Locker<DeviceSwitcher, TargetDeviceDriver> cover(device);
+        cover->turn_off();
         return new IntResult(1);
     } catch(TargetDeviceInternalError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
@@ -31,7 +34,8 @@ Result *SwitcherOff::execute() throw() {
 
 Result *TemperatureGet::execute() throw() {
     try {
-        double res = device->get_temperature();
+        Locker<DeviceTemperature, TargetDeviceDriver> cover(device);
+        double res = cover->get_temperature();
         return new FloatResult(res);
     } catch(TargetDeviceInternalError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
@@ -45,7 +49,8 @@ Result *TemperatureGet::execute() throw() {
 
 Result *BoilerOn::execute() throw() {
     try {
-        device->turn_on();
+        Locker<DeviceBoiler, TargetDeviceDriver> cover(device);
+        cover->turn_on();
         return new IntResult(1);
     } catch(TargetDeviceInternalError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
@@ -59,7 +64,8 @@ Result *BoilerOn::execute() throw() {
 
 Result *BoilerOff::execute() throw() {
     try {
-        device->turn_off();
+        Locker<DeviceBoiler, TargetDeviceDriver> cover(device);
+        cover->turn_off();
         return new IntResult(1);
     } catch(TargetDeviceInternalError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
@@ -73,7 +79,8 @@ Result *BoilerOff::execute() throw() {
 
 Result *BoilerTemperatureGet::execute() throw() {
     try {
-        double res = device->get_temperature();
+        Locker<DeviceBoiler, TargetDeviceDriver> cover(device);
+        double res = cover->get_temperature();
         return new FloatResult(res);
     } catch(TargetDeviceInternalError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
