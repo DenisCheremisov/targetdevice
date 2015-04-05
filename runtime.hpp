@@ -157,6 +157,7 @@ class SingleCommandSchedule: public BaseSchedule {
 private:
     Command *command;
     time_t start_point;
+    time_t stop_point;
     int restart_period;
     bool expired;
 
@@ -165,7 +166,7 @@ public:
         delete command;
     }
 
-    SingleCommandSchedule(Command *cmd, time_t start_point,
+    SingleCommandSchedule(Command *cmd, time_t start_point, time_t stop_point,
                           int restart_period = -1);
 
     Commands *get_commands(time_t tm);
@@ -187,7 +188,7 @@ public:
     ~CoupledCommandSchedule() throw ();
 
     CoupledCommandSchedule(Command *cmd,
-                           time_t start_point,
+                           time_t start_point, time_t stop_point,
                            Command *coupled_command,
                            int coupled_interval,
                            int restart_period = -1);
@@ -195,5 +196,33 @@ public:
     Commands *get_commands(time_t tm);
     bool is_expired();
 };
+
+
+class BaseCondition {
+public:
+    virtual ~BaseCondition() throw() {};
+    virtual bool indeed() = 0;
+};
+
+
+class ConditionedSchedule: public BaseSchedule {
+private:
+    Command *command, *coupled_command;
+    BaseCondition *condition;
+    time_t start_point, stop_point;
+    bool to_be_stopped;
+    bool expired;
+
+public:
+    ~ConditionedSchedule() throw();
+
+    ConditionedSchedule(Command *cmd,
+                        Command *coupled_cmd,
+                        BaseCondition *cnd,
+                        time_t start_point = -1, time_t stop_point = -1);
+    Commands *get_commands(time_t tm);
+    bool is_expired();
+};
+
 
 #endif

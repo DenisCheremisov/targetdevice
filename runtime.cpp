@@ -117,7 +117,7 @@ bool NamedSchedule::is_expired() {
 
 
 SingleCommandSchedule::SingleCommandSchedule(Command *cmd,
-                                             time_t start,
+                                             time_t start, time_t stop,
                                              int restart) {
     if(restart >= 0 && restart < RUNTIME_WAKE_PAUSE*2) {
         stringstream buf;
@@ -128,8 +128,12 @@ SingleCommandSchedule::SingleCommandSchedule(Command *cmd,
     if(start > 0 && start <= time(NULL)) {
         throw ScheduleSetupError("Attempt to set a task to the past");
     }
+    if(stop > 0 && stop <= start) {
+        throw ScheduleSetupError("Attempt to set stop point before the start");
+    }
     command = cmd;
     start_point = start;
+    stop_point = stop;
     restart_period = restart;
     expired = false;
 }
@@ -138,7 +142,11 @@ SingleCommandSchedule::SingleCommandSchedule(Command *cmd,
 Commands *SingleCommandSchedule::get_commands(time_t tm) {
     auto_ptr<Commands> result(new Commands);
     if(tm >= start_point && !expired) {
-        result->push_back(command);
+        if(stop_point <= 0 || tm < stop_point) {
+            result->push_back(command);
+        } else {
+            expired = true;
+        }
         if(restart_period >= 0) {
             start_point += restart_period;
         } else {
@@ -170,11 +178,11 @@ CoupledCommandSchedule::~CoupledCommandSchedule() throw() {
 
 
 CoupledCommandSchedule::CoupledCommandSchedule(Command *cmd,
-                                               time_t start,
+                                               time_t start, time_t stop,
                                                Command *coupled_cmd,
                                                int coupled,
                                                int restart):
-    SingleCommandSchedule(cmd, start, restart) {
+    SingleCommandSchedule(cmd, start, stop, restart) {
     if(coupled <= 0) {
         throw ScheduleSetupError("Coupling command interval must"
                                  " be greater than 0");
@@ -215,4 +223,59 @@ bool CoupledCommandSchedule::is_expired() {
         return SingleCommandSchedule::is_expired();
     }
     return false;
+}
+
+
+ConditionedSchedule::ConditionedSchedule(Command *cmd,
+                                         Command *coupled_cmd,
+                                         BaseCondition *cnd,
+                                         time_t start, time_t stop):
+    command(cmd), coupled_command(coupled_cmd), condition(cnd) {
+    if(start > 0 && start <= time(NULL)) {
+        throw ScheduleSetupError("Attempt to set task to the past");
+    }
+    if(stop >= 0 && stop <= start) {
+        throw ScheduleSetupError("Attempt to set stop point before the start");
+    }
+    start_point = start;
+    stop_point = stop;
+    to_be_stopped = false;
+    expired = false;
+}
+
+
+ConditionedSchedule::~ConditionedSchedule() throw() {
+    try {
+        if(to_be_stopped) {
+            delete coupled_command->execute();
+        }
+    }  catch(...) {
+        ;// No luck
+    }
+    delete coupled_command;
+    delete command;
+    delete condition;
+}
+
+
+Commands *ConditionedSchedule::get_commands(time_t tm) {
+    auto_ptr<Commands> result(new Commands);
+    if(condition->indeed()) {
+        if(stop_point > 0) {
+            expired = tm >= stop_point;
+        }
+        if(!to_be_stopped && !expired) {
+            result->push_back(command);
+            to_be_stopped = true;
+        }
+    } else if(to_be_stopped == true) {
+        result->push_back(coupled_command);
+        to_be_stopped = false;
+    }
+    return result.release();
+}
+
+
+bool ConditionedSchedule::is_expired() {
+    return expired && !to_be_stopped;
 }
