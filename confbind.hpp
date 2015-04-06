@@ -83,10 +83,7 @@ public:
 };
 
 
-class Devices {
-private:
-    std::map<std::string, device_reference_t*> devices;
-
+class Devices: public std::map<std::string, device_reference_t*> {
 public:
     virtual ~Devices() throw();
     Devices(Drivers &drivers, const config_devices_t &conf);

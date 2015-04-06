@@ -56,8 +56,8 @@ double DeviceTemperature::get_temperature() {
 
 
 Devices::~Devices() throw() {
-    for(map<string, device_reference_t*>::iterator it = devices.begin();
-        it != devices.end(); it++) {
+    for(map<string, device_reference_t*>::iterator it = this->begin();
+        it != this->end(); it++) {
         delete it->second;
     }
 }
@@ -69,19 +69,19 @@ Devices::Devices(Drivers &drivers, const config_devices_t &conf) {
         switch(it->second->id()) {
         case DEVICE_SWITCHER: {
             Switcher *sw = dynamic_cast<Switcher*>(it->second);
-            devices[it->first] =
+            (*this)[it->first] =
                 new device_reference_t(new DeviceSwitcher(drivers, sw));
             break;
         }
         case DEVICE_THERMOSWITCHER: {
             Thermoswitcher *trm = dynamic_cast<Thermoswitcher*>(it->second);
-            devices[it->first] =
+            (*this)[it->first] =
                 new device_reference_t(new DeviceTemperature(drivers, trm));
             break;
         }
         case DEVICE_BOILER: {
             Boiler *blr = dynamic_cast<Boiler*>(it->second);
-            devices[it->first] =
+            (*this)[it->first] =
                 new device_reference_t(new DeviceBoiler(drivers, blr));
             break;
         }
@@ -93,5 +93,5 @@ Devices::Devices(Drivers &drivers, const config_devices_t &conf) {
 
 
 device_reference_t *Devices::device(string name) {
-    return devices.at(name);
+    return this->at(name);
 }
