@@ -23,6 +23,9 @@ commands.o: commands.cpp commands.hpp
 background.o: background.cpp
 	$(COMPILE) -c background.cpp
 
+model.o: model.cpp model.hpp
+	$(COMPILE) -c model.cpp
+
 clean:
 	rm *.o test_*
 
@@ -40,3 +43,6 @@ test_confbind: confbind.o targetdevice.o confparser.o test/test_confbind.cpp
 
 test_commands: commands.o confbind.o targetdevice.o confparser.o test/test_commands.cpp
 	$(COMPILE) -o test_commands confbind.o targetdevice.o confparser.o commands.o test/test_commands.cpp $(TESTFLAGS) -lyaml -lpthread
+
+test_model: confbind.o targetdevice.o confparser.o model.o test/test_model.cpp
+	$(COMPILE) -o test_model model.o confbind.o targetdevice.o confparser.o test/test_model.cpp $(TESTFLAGS) -lyaml
