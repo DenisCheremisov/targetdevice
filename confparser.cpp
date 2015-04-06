@@ -7,6 +7,9 @@
 
 using namespace std;
 
+int Config::version = 1;
+time_t Config::startup = time(NULL);
+
 
 ParserError::ParserError(yaml_event_t *event, string message) {
     stringstream buf;

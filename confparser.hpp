@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <ctime>
 
 #include <yaml.h>
 
@@ -127,6 +128,9 @@ private:
     config_connection_t *_connection;
     config_daemon_t *_daemon;
     config_devices_t *_devices;
+
+    static int version;
+    static time_t startup;
 
 public:
     Config(config_drivers_t *drvrs,
