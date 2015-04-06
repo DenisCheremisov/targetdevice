@@ -39,4 +39,78 @@ public:
 };
 
 
+typedef std::map<std::string, std::string> s_map;
+
+class BaseInstructionLine {
+public:
+    enum {
+        INSTRUCTION_VALUE,
+        INSTRUCTION_SINGLE,
+        INSTRUCTION_COUPLED,
+        INSTRUCTION_CONDITIONAL
+    } type;
+
+    virtual ~BaseInstructionLine() throw() {};
+    virtual void build(std::string) {};
+
+    static void deconstruct(std::string, s_map&);
+};
+
+
+class ValueInstructionLine: public BaseInstructionLine {
+public:
+    std::string id, command;
+
+    virtual ~ValueInstructionLine() throw() {};
+    ValueInstructionLine(s_map&);
+};
+
+
+class SingleInstructionLine: public BaseInstructionLine {
+public:
+    std::string id, command, name;
+    time_t start, stop, restart;
+
+    ~SingleInstructionLine() throw() {};
+    SingleInstructionLine(s_map&);
+};
+
+
+class CoupledInstructionLine: public BaseInstructionLine {
+public:
+    std::string id, command, name, couple;
+    time_t start, stop, coupling_interval, command_restart;
+
+    ~CoupledInstructionLine() throw() {};
+    CoupledInstructionLine(s_map&);
+};
+
+
+struct comparison_t {
+    std::string source;
+    enum {
+        TEMPERATURE
+    } source_endpoint;
+    enum {
+        COMPARISON_LT,
+        COMPARISON, LTE,
+        COMPARISON_GTE,
+        COMPARISON_GT,
+        COMPARISON_EQ
+    } operation;
+    double value;
+};
+
+
+class ConditionInstructionLine: public BaseInstructionLine {
+public:
+    std::string id, command, name, couple;
+    time_t start, stop;
+    comparison_t comparison;
+
+    ~ConditionInstructionLine() throw() {};
+    ConditionInstructionLine(s_map&);
+};
+
+
 #endif
