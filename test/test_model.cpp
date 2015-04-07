@@ -160,3 +160,147 @@ BOOST_AUTO_TEST_CASE(test_single_instruction) {
                             InteruptionHandling);
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(test_couple_instruction) {
+    s_map ref;
+    BaseInstructionLine::deconstruct(
+         "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=12:COUPLE=boiler.off:COUPLING-INTERVAL=40",
+         ref);
+
+    {
+        CoupledInstructionLine instr(ref);
+        BOOST_CHECK_EQUAL(instr.id, "1");
+        BOOST_CHECK_EQUAL(instr.name, "boiler-on");
+        BOOST_CHECK_EQUAL(instr.command, "boiler.on");
+        BOOST_CHECK_EQUAL(instr.start, 12);
+        BOOST_CHECK_EQUAL(instr.stop, -1);
+        BOOST_CHECK_EQUAL(instr.restart, -1);
+        BOOST_CHECK_EQUAL(instr.couple, "boiler.off");
+        BOOST_CHECK_EQUAL(instr.coupling_interval, 40);
+    }
+
+    const int LENGTH = 2;
+    const char *wrong_instrs[LENGTH] = {
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=12:STOP=16:RESTART=60:COUPLING-INTERVAL=a",
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=12:STOP=16:RESTART=60:COUPLE=boiler.off",
+    };
+
+    for(int i = 0; i < LENGTH; i++) {
+        ref.clear();
+        BaseInstructionLine::deconstruct((char*)wrong_instrs[i], ref);
+        BOOST_REQUIRE_THROW(auto_ptr<CoupledInstructionLine>(
+                               new CoupledInstructionLine(ref)),
+                            InteruptionHandling);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(test_parser_condition) {
+    comparison_t res;
+
+    res = parse_comparison("boiler.temperature.LT_80");
+    BOOST_CHECK_EQUAL(res.source, "boiler");
+    BOOST_CHECK_EQUAL(res.source_endpoint, ENDPOINT_TEMPERATURE);
+    BOOST_CHECK_EQUAL(res.operation, COMPARISON_LT);
+    BOOST_CHECK_EQUAL(res.value, 80);
+
+    res = parse_comparison("boiler.temperature.LTE_80");
+    BOOST_CHECK_EQUAL(res.source, "boiler");
+    BOOST_CHECK_EQUAL(res.source_endpoint, ENDPOINT_TEMPERATURE);
+    BOOST_CHECK_EQUAL(res.operation, COMPARISON_LTE);
+    BOOST_CHECK_EQUAL(res.value, 80);
+
+    res = parse_comparison("boiler.temperature.EQ_80");
+    BOOST_CHECK_EQUAL(res.source, "boiler");
+    BOOST_CHECK_EQUAL(res.source_endpoint, ENDPOINT_TEMPERATURE);
+    BOOST_CHECK_EQUAL(res.operation, COMPARISON_EQ);
+    BOOST_CHECK_EQUAL(res.value, 80);
+
+    res = parse_comparison("boiler.temperature.GTE_80");
+    BOOST_CHECK_EQUAL(res.source, "boiler");
+    BOOST_CHECK_EQUAL(res.source_endpoint, ENDPOINT_TEMPERATURE);
+    BOOST_CHECK_EQUAL(res.operation, COMPARISON_GTE);
+    BOOST_CHECK_EQUAL(res.value, 80);
+
+    res = parse_comparison("boiler.temperature.GT_80");
+    BOOST_CHECK_EQUAL(res.source, "boiler");
+    BOOST_CHECK_EQUAL(res.source_endpoint, ENDPOINT_TEMPERATURE);
+    BOOST_CHECK_EQUAL(res.operation, COMPARISON_GT);
+    BOOST_CHECK_EQUAL(res.value, 80);
+
+    BOOST_REQUIRE_THROW(parse_comparison("boiler.camera.GT_80"),
+                        InteruptionHandling);
+    BOOST_REQUIRE_THROW(parse_comparison("boiler.camera.GT_80"),
+                        InteruptionHandling);
+    BOOST_REQUIRE_THROW(parse_comparison("boiler.temperature._80"),
+                        InteruptionHandling);
+    BOOST_REQUIRE_THROW(parse_comparison("boiler.temperature.K_80"),
+                        InteruptionHandling);
+    BOOST_REQUIRE_THROW(parse_comparison("boiler.temperature.EQ_"),
+                        InteruptionHandling);
+    BOOST_REQUIRE_THROW(parse_comparison("boiler.temperature."),
+                        InteruptionHandling);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_conditioned_instruction) {
+    s_map ref;
+    BaseInstructionLine::deconstruct(
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=12:COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80",
+        ref);
+    {
+        ConditionInstructionLine instr(ref);
+        BOOST_CHECK_EQUAL(instr.id, "1");
+        BOOST_CHECK_EQUAL(instr.name, "boiler-on");
+        BOOST_CHECK_EQUAL(instr.command, "boiler.on");
+        BOOST_CHECK_EQUAL(instr.start, 12);
+        BOOST_CHECK_EQUAL(instr.stop, -1);
+        BOOST_CHECK_EQUAL(instr.couple, "boiler.off");
+        BOOST_CHECK_EQUAL(instr.comparison.source, "boiler");
+        BOOST_CHECK_EQUAL(instr.comparison.source_endpoint,
+                          ENDPOINT_TEMPERATURE);
+        BOOST_CHECK_EQUAL(instr.comparison.operation, COMPARISON_LT);
+        BOOST_CHECK_EQUAL(instr.comparison.value, 80);
+    }
+
+    ref.clear();
+    BaseInstructionLine::deconstruct(
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=12:STOP=40:COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80",
+        ref);
+    {
+        ConditionInstructionLine instr(ref);
+        BOOST_CHECK_EQUAL(instr.id, "1");
+        BOOST_CHECK_EQUAL(instr.name, "boiler-on");
+        BOOST_CHECK_EQUAL(instr.command, "boiler.on");
+        BOOST_CHECK_EQUAL(instr.start, 12);
+        BOOST_CHECK_EQUAL(instr.stop, 40);
+        BOOST_CHECK_EQUAL(instr.couple, "boiler.off");
+        BOOST_CHECK_EQUAL(instr.comparison.source, "boiler");
+        BOOST_CHECK_EQUAL(instr.comparison.source_endpoint,
+                          ENDPOINT_TEMPERATURE);
+        BOOST_CHECK_EQUAL(instr.comparison.operation, COMPARISON_LT);
+        BOOST_CHECK_EQUAL(instr.comparison.value, 80);
+    }
+
+    const int LENGTH = 9;
+    const char *wrong_instrs[LENGTH] = {
+        "NAME=boiler-on:COMMAND=boiler.on:START=12:COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80",
+        "ID=1:COMMAND=boiler.on:START=12:COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80",
+        "ID=1:NAME=boiler-on:START=12:COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80",
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80",
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=12:CONDITION=boiler.temperature.LT_80",
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=12:COUPLE=boiler.off",
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=a:COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80",
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=12:STOP=b:COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80",
+        "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=12:STOP=40:COUPLE=boiler.off:CONDITION=boiler.temperature.80",
+    };
+
+    for(int i = 0; i < LENGTH; i++) {
+        ref.clear();
+        BaseInstructionLine::deconstruct((char*)wrong_instrs[i], ref);
+        BOOST_REQUIRE_THROW(auto_ptr<CoupledInstructionLine>(
+                               new CoupledInstructionLine(ref)),
+                            InteruptionHandling);
+    }
+}

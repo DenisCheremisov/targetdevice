@@ -114,12 +114,17 @@ ValueInstructionLine::ValueInstructionLine(s_map &ref) {
 }
 
 
-int need_int(string value, string key) {
+int need_int(string value, string key, const char *custom = NULL) {
     char *p;
-    int res = strtol(value.c_str(), &p, 10);
-    if(*p) {
+    const char *start = value.c_str();
+    int res = strtol(start, &p, 10);
+    if(*p || p == start) {
         stringstream buf;
-        buf << value << " is not a number in " << key << "=" << value;
+        if(custom != (const char*)NULL) {
+            buf << custom;
+        } else {
+            buf << value << " is not a number in " << key << "=" << value;
+        }
         throw InteruptionHandling(buf.str());
     }
     return res;
@@ -152,4 +157,98 @@ SingleInstructionLine::SingleInstructionLine(s_map &ref) {
     command = ref[COMMAND];
     name = ref[NAME];
     start = need_int(ref[START], START);
+}
+
+
+CoupledInstructionLine::CoupledInstructionLine(s_map &ref):
+    SingleInstructionLine(ref) {
+    key_required(ref, COUPLE);
+    key_required(ref, COUPLING_INTERVAL);
+
+    couple = ref[COUPLE];
+    coupling_interval = need_int(ref[COUPLING_INTERVAL], COUPLING_INTERVAL);
+}
+
+
+comparison_t parse_comparison(string source) throw(InteruptionHandling) {
+    spair data;
+    comparison_t comp;
+
+    if(pair_split(source, '.', data) < 0) {
+        stringstream buf;
+        buf << "Wrong condition format: " << source;
+        throw InteruptionHandling(buf.str());
+    }
+    comp.source = data.first;
+
+    string tmp = data.second;
+    if(pair_split(tmp, '.', data) < 0) {
+        stringstream buf;
+        buf << "Wrong condition format: " << source;
+        throw InteruptionHandling(buf.str());
+    }
+    if(data.first == "temperature") {
+        comp.source_endpoint = ENDPOINT_TEMPERATURE;
+    } else {
+        stringstream buf;
+        buf << "Endpoint " << data.first << " is not supported " <<
+            source;
+        throw InteruptionHandling(buf.str());
+    }
+
+    tmp = data.second;
+    if(pair_split(tmp, '_', data) < 0) {
+        stringstream buf;
+        buf << "Wrong comparison format, must be <OPERATOR>_<VALUE>, got " <<
+            tmp << " instead";
+        throw InteruptionHandling(buf.str());
+    }
+    comp.value = need_int(data.second, CONDITION,
+                          (data.second + ": not a number").c_str());
+
+
+    map<string, operation_t> chooser;
+    chooser["LT"] = COMPARISON_LT;
+    chooser["LTE"] = COMPARISON_LTE;
+    chooser["EQ"] = COMPARISON_EQ;
+    chooser["GTE"] = COMPARISON_GTE;
+    chooser["GT"] = COMPARISON_GT;
+
+    map<string, operation_t>::iterator lookup = chooser.find(data.first);
+    if(lookup == chooser.end()) {
+        stringstream buf;
+        buf << "Wrong operation: " << data.first;
+        throw InteruptionHandling(buf.str());
+    } else {
+        comp.operation = lookup->second;
+    }
+
+    return comp;
+}
+
+
+ConditionInstructionLine::ConditionInstructionLine(s_map &ref) {
+    key_required(ref, ID);
+    key_required(ref, NAME);
+    key_required(ref, COMMAND);
+    key_required(ref, COUPLE);
+    key_required(ref, CONDITION);
+    key_required(ref, START);
+
+    s_map::iterator finder;
+
+    finder = ref.find(STOP);
+    if(finder != ref.end()) {
+        stop = need_int(ref[STOP], STOP);
+    } else {
+        stop = -1;
+    }
+
+    id = ref[ID];
+    name = ref[NAME];
+    command = ref[COMMAND];
+    couple = ref[COUPLE];
+    start = need_int(ref[START], START);
+
+    comparison = parse_comparison(ref[CONDITION]);
 }

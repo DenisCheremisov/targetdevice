@@ -69,37 +69,47 @@ public:
 class SingleInstructionLine: public BaseInstructionLine {
 public:
     std::string id, command, name;
-    time_t start, stop, restart;
+    time_t start, stop;
+    int restart;
 
     ~SingleInstructionLine() throw() {};
     SingleInstructionLine(s_map&);
 };
 
 
-class CoupledInstructionLine: public BaseInstructionLine {
+class CoupledInstructionLine: public SingleInstructionLine {
 public:
-    std::string id, command, name, couple;
-    time_t start, stop, coupling_interval, command_restart;
+    std::string couple;
+    int coupling_interval;
 
     ~CoupledInstructionLine() throw() {};
     CoupledInstructionLine(s_map&);
 };
 
 
+typedef enum {
+        COMPARISON_LT,
+        COMPARISON_LTE,
+        COMPARISON_EQ,
+        COMPARISON_GTE,
+        COMPARISON_GT
+} operation_t;
+
+
+typedef enum {
+    ENDPOINT_TEMPERATURE
+} source_endpoint_t;
+
+
 struct comparison_t {
     std::string source;
-    enum {
-        TEMPERATURE
-    } source_endpoint;
-    enum {
-        COMPARISON_LT,
-        COMPARISON, LTE,
-        COMPARISON_GTE,
-        COMPARISON_GT,
-        COMPARISON_EQ
-    } operation;
+    source_endpoint_t source_endpoint;
+    operation_t operation;
     double value;
 };
+
+
+comparison_t parse_comparison(std::string source) throw(InteruptionHandling);
 
 
 class ConditionInstructionLine: public BaseInstructionLine {
