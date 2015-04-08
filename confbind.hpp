@@ -16,12 +16,19 @@ public:
 };
 
 
-class DeviceSwitcher {
+class BaseDescrDevice {
+public:
+    virtual ~BaseDescrDevice() throw() {};
+};
+
+
+class DeviceSwitcher: public BaseDescrDevice {
 private:
     TargetDeviceDriver *relay_device;
     int relay_port;
 
 public:
+    ~DeviceSwitcher() throw() {};
     DeviceSwitcher(Drivers &drivers, Switcher *conf);
 
     void turn_on();
@@ -35,6 +42,7 @@ private:
     int adc_port;
 
 public:
+    ~DeviceTemperature() throw() {};
     DeviceTemperature(Drivers &drivers, Thermoswitcher *conf);
 
     double get_temperature();
@@ -43,6 +51,7 @@ public:
 
 class DeviceBoiler: public DeviceSwitcher, public DeviceTemperature {
 public:
+    ~DeviceBoiler() throw() {};
     DeviceBoiler(Drivers &drivers,  Boiler *conf):
         DeviceSwitcher(drivers, conf),
         DeviceTemperature(drivers, conf) {};
@@ -53,6 +62,7 @@ struct device_reference_t {
 public:
     device_type_t type;
     union {
+        BaseDescrDevice *basepointer;
         DeviceSwitcher *switcher;
         DeviceTemperature *temperature;
         DeviceBoiler *boiler;

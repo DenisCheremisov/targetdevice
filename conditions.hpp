@@ -7,18 +7,50 @@
 #include "confbind.hpp"
 
 
-class TempIsLowerCondition: public BaseCondition {
+template <typename T>
+bool compare_lt(T a, T b) {
+    return a < b;
+}
+
+
+template <typename T>
+bool compare_le(T a, T b) {
+    return a <= b;
+}
+
+
+template <typename T>
+bool compare_eq(T a, T b) {
+    return a == b;
+}
+
+
+template <typename T>
+bool compare_ge(T a, T b) {
+    return a >= b;
+}
+
+
+template <typename T>
+bool compare_gt(T a, T b) {
+    return a > b;
+}
+
+
+class TemperatureCondition: public BaseCondition {
 private:
     DeviceTemperature *device;
     double bound;
+    bool (*comparator)(double, double);
 
 public:
-    TempIsLowerCondition(DeviceTemperature *dvc, double bnd):
-        device(dvc), bound(bdn) {};
-    ~TempIsLowerCondition() throw() {};
+    TemperatureCondition(DeviceTemperature *dvc, double bnd,
+                         bool (*cmprtr)(double, double)):
+        device(dvc), bound(bnd), comparator(cmprtr) {};
+    ~TemperatureCondition() throw() {};
 
     bool indeed() {
-        return device->get_temperature();
+        return comparator(device->get_temperature(), bound);
     }
 };
 
@@ -26,7 +58,7 @@ public:
 class NoConditionError: public std::exception, public std::string {
 public:
     ~NoConditionError() throw() {};
-    NoConditionError(std::string message): std::string(message);
+    NoConditionError(std::string message): std::string(message) {};
 
     const char *what() {
         return this->c_str();

@@ -5,15 +5,18 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <stdexcept>
 
 #include "model.hpp"
 #include "commands.hpp"
 #include "devices.hpp"
+#include "conditions.hpp"
+#include "locker.hpp"
 
 using namespace std;
 
 const char
-    *ID = "ID",
+*ID = "ID",
     *COMMAND = "COMMAND",
     *NAME = "NAME",
     *COUPLE = "COUPLE",
@@ -214,9 +217,9 @@ comparison_t parse_comparison(string source) throw(InteruptionHandling) {
 
     map<string, operation_t> chooser;
     chooser["LT"] = COMPARISON_LT;
-    chooser["LTE"] = COMPARISON_LTE;
+    chooser["LE"] = COMPARISON_LE;
     chooser["EQ"] = COMPARISON_EQ;
-    chooser["GTE"] = COMPARISON_GTE;
+    chooser["GE"] = COMPARISON_GE;
     chooser["GT"] = COMPARISON_GT;
 
     map<string, operation_t>::iterator lookup = chooser.find(data.first);
@@ -328,10 +331,120 @@ Command *command_from_string(model_call_params_t &params, string cmd) {
 }
 
 
+template <class T>
+class safe_vector: public vector<T*> {
+public:
+    ~safe_vector() throw() {
+        while(!this->empty()) {
+            delete this->back();
+            this->pop_back();
+        }
+    }
+};
+
+
+template <typename K, typename T>
+class safe_map: public map<K, T*> {
+public:
+    ~safe_map() throw() {
+        for(typename safe_map<K, T>::iterator it = this->begin();
+            it != this->end(); it++) {
+            if(it->second != NULL) {
+                delete it->second;
+            }
+        }
+    }
+};
+
+
+BaseSchedule *get_single(model_call_params_t &params,
+                         SingleInstructionLine *item) {
+    auto_ptr<Command> cmd(command_from_string(params, item->command));
+    BaseSchedule *res =  new SingleCommandSchedule(
+        cmd.get(), item->start, item->stop, item->restart);
+    cmd.release();
+    return res;
+}
+
+
+BaseSchedule *get_coupled(model_call_params_t &params,
+                          CoupledInstructionLine *item) {
+    auto_ptr<Command> cmd(command_from_string(params, item->command));
+    auto_ptr<Command> couple(command_from_string(params, item->couple));
+    BaseSchedule *res = new CoupledCommandSchedule(
+        cmd.get(), item->start, item->stop,
+        couple.get(), item->coupling_interval,
+        item->restart);
+    cmd.release();
+    couple.release();
+    return res;
+}
+
+
+BaseSchedule* get_conditioned(model_call_params_t &params,
+                              ConditionInstructionLine *item) {
+    auto_ptr<BaseCondition> cond;
+    try {
+        device_reference_t *devref = params.devices->device(
+            item->comparison.source);
+        DeviceTemperature *dvc = dynamic_cast<DeviceTemperature*>(
+            devref->basepointer);
+        if(dvc == (DeviceTemperature*)NULL) {
+            stringstream buf;
+            buf << item->comparison.source << " has no temperature port";
+            throw InteruptionHandling(buf.str());
+        }
+
+        bool (*comparator)(double, double);
+        switch(item->comparison.operation) {
+        case COMPARISON_LT:
+            comparator = compare_lt<double>;
+            break;
+        case COMPARISON_LE:
+            comparator = compare_le<double>;
+            break;
+        case COMPARISON_EQ:
+            comparator = compare_eq<double>;
+            break;
+        case COMPARISON_GE:
+            comparator = compare_ge<double>;
+            break;
+        case COMPARISON_GT:
+            comparator = compare_gt<double>;
+            break;
+        default:
+            comparator = compare_lt<double>;
+        }
+        cond = auto_ptr<BaseCondition>(
+            new TemperatureCondition(dvc, item->comparison.value, comparator));
+    } catch(out_of_range e) {
+        stringstream buf;
+        buf << item->comparison.source << ": no such device";
+        throw InteruptionHandling(buf.str());
+    }
+
+    auto_ptr<Command> cmd(command_from_string(params, item->command));
+    auto_ptr<Command> couple(command_from_string(params, item->couple));
+
+    BaseSchedule *res = new ConditionedSchedule(cmd.get(), couple.get(), cond.get(),
+                                                 item->start, item->stop);
+    cmd.release();
+    couple.release();
+    cond.release();
+    return res;
+}
+
+
 string InstructionListModel::execute(model_call_params_t &params)
     throw(InteruptionHandling) {
     stringstream buf(params.request_data);
     string line;
+
+    safe_vector<ValueInstructionLine> values;
+    safe_vector<SingleInstructionLine> singles;
+    safe_vector<CoupledInstructionLine> couples;
+    safe_vector<ConditionInstructionLine> conditionals;
+
     while(getline(buf, line, '\n')) {
         s_map ref;
         BaseInstructionLine::deconstruct(line, ref);
@@ -339,10 +452,7 @@ string InstructionListModel::execute(model_call_params_t &params)
         key_required(ref, TYPE);
         string type = ref[TYPE];
 
-        vector<ValueInstructionLine *> values;
-        vector<SingleInstructionLine *> singles;
-        vector<CoupledInstructionLine *> couples;
-        vector<ConditionInstructionLine *> conditionals;
+
         if(type == "VALUE") {
             values.push_back(new ValueInstructionLine(ref));
         } else if(type == "SINGLE") {
@@ -354,5 +464,71 @@ string InstructionListModel::execute(model_call_params_t &params)
         }
     }
 
-    return "";
+    // Now create schedules
+    safe_map<string, BaseSchedule> res;
+
+    for(safe_vector<SingleInstructionLine>::iterator it = singles.begin();
+        it != singles.end(); it++) {
+        SingleInstructionLine *item = *it;
+        try {
+            res[item->name] = get_single(params, item);
+        } catch(ScheduleSetupError &er) {
+            stringstream buf;
+            buf << item->id << ": " << er.what();
+            throw InteruptionHandling(buf.str());
+        }
+
+    }
+
+    for(safe_vector<CoupledInstructionLine>::iterator it = couples.begin();
+        it != couples.end(); it++) {
+        CoupledInstructionLine *item = *it;
+        try {
+            res[item->name] = get_coupled(params, item);
+        } catch(ScheduleSetupError &er) {
+            stringstream buf;
+            buf << item->id << ": " << er.what();
+            throw InteruptionHandling(buf.str());
+        }
+    }
+
+    for(safe_vector<ConditionInstructionLine>::iterator it = conditionals.begin();
+        it != conditionals.end(); it++) {
+        ConditionInstructionLine *item = *it;
+
+        try {
+            res[item->name] = get_conditioned(params, item);
+        } catch(ScheduleSetupError &er) {
+            stringstream buf;
+            buf << item->id << ": " << er.what();
+            throw InteruptionHandling(buf.str());
+        }
+    }
+
+    {
+        UnifiedLocker<BaseSchedule> safe(params.sched);
+        for(safe_map<string, BaseSchedule>::iterator it = res.begin();
+            it != res.end(); it++) {
+            params.sched->set_schedule(it->first, it->second);
+            it->second = NULL;
+        }
+    }
+
+    stringstream result;
+    for(safe_vector<ValueInstructionLine>::iterator it = values.begin();
+        it != values.end(); it++) {
+        ValueInstructionLine *item = *it;
+        auto_ptr<Command> cmd(command_from_string(params, item->command));
+        auto_ptr<Result> value(cmd->execute());
+        if(dynamic_cast<ErrorResult*>(value.get())) {
+            result << "ID=" << item->id << ":SUCCESS=false:ERROR=" <<
+                value->value();
+        } else {
+            result << "ID=" << item->id << ":SUCCESS=true:VALUE=" <<
+                value->value();
+        }
+        result << endl;
+    }
+
+    return result.str();
 }

@@ -4,10 +4,12 @@
 #include "confbind.hpp"
 #include "commands.hpp"
 #include "controller.hpp"
+#include "runtime.hpp"
 
 struct model_call_params_t {
     Config *config;
     Devices *devices;
+    NamedSchedule *sched;
     std::string request_data;
 };
 
@@ -90,9 +92,9 @@ public:
 
 typedef enum {
         COMPARISON_LT,
-        COMPARISON_LTE,
+        COMPARISON_LE,
         COMPARISON_EQ,
-        COMPARISON_GTE,
+        COMPARISON_GE,
         COMPARISON_GT
 } operation_t;
 
@@ -134,4 +136,14 @@ public:
 
 
 Command *command_from_string(model_call_params_t &params, std::string cmd);
+
+
+BaseSchedule *get_single(model_call_params_t &params,
+                         SingleInstructionLine *item);
+BaseSchedule *get_coupled(model_call_params_t &params,
+                          CoupledInstructionLine *item);
+BaseSchedule* get_conditioned(model_call_params_t &params,
+                              ConditionInstructionLine *item);
+
+
 #endif

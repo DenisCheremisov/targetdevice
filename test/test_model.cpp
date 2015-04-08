@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <boost/test/unit_test.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include "../model.hpp"
 
@@ -18,14 +19,14 @@ const char *CONFIG_FILE_NAME = "test_targetdevice.yaml";
 
 class ConfigInitializer {
 public:
-    auto_ptr<Config> conf;
-    auto_ptr<Devices> devices;
+    Config* conf;
+    Devices* devices;
+    Drivers *drivers;
 
     ConfigInitializer() {
-        FILE *pp;
         stringstream buf;
         buf << "python3 scripts/make_config.py " << getpid();
-        pp = popen(buf.str().c_str(), "r");
+        FILE *pp = popen(buf.str().c_str(), "r");
         if(pp == NULL) {
             throw "Cannot start virtual serial device";
         }
@@ -37,11 +38,17 @@ public:
             throw runtime_error(string("Cannot open sample file: ") + CONFIG_FILE_NAME);
         }
         auto_ptr<MapElement> res(dynamic_cast<MapElement*>(raw_conf_parse(fp)));
-        conf = auto_ptr<Config>(config_parse(res.get()));
+        conf = config_parse(res.get());
 
-        Drivers drivers(conf->drivers());
-        devices = auto_ptr<Devices>(new Devices(drivers, conf->devices()));
+        drivers = new Drivers(conf->drivers());
+        devices = new Devices(*drivers, conf->devices());
     };
+
+    ~ConfigInitializer() throw() {
+        delete conf;
+        delete devices;
+        delete drivers;
+    }
 };
 ConfigInitializer init;
 
@@ -49,8 +56,8 @@ ConfigInitializer init;
 BOOST_AUTO_TEST_CASE(test_config_get) {
     ConfigInfoModel config_info;
     model_call_params_t params;
-    params.config = init.conf.get();
-    params.devices = init.devices.get();
+    params.config = init.conf;
+    params.devices = init.devices;
     params.request_data = "GET";
 
     BOOST_CHECK_EQUAL(config_info.execute(params),
@@ -205,10 +212,10 @@ BOOST_AUTO_TEST_CASE(test_parser_condition) {
     BOOST_CHECK_EQUAL(res.operation, COMPARISON_LT);
     BOOST_CHECK_EQUAL(res.value, 80);
 
-    res = parse_comparison("boiler.temperature.LTE_80");
+    res = parse_comparison("boiler.temperature.LE_80");
     BOOST_CHECK_EQUAL(res.source, "boiler");
     BOOST_CHECK_EQUAL(res.source_endpoint, ENDPOINT_TEMPERATURE);
-    BOOST_CHECK_EQUAL(res.operation, COMPARISON_LTE);
+    BOOST_CHECK_EQUAL(res.operation, COMPARISON_LE);
     BOOST_CHECK_EQUAL(res.value, 80);
 
     res = parse_comparison("boiler.temperature.EQ_80");
@@ -217,10 +224,10 @@ BOOST_AUTO_TEST_CASE(test_parser_condition) {
     BOOST_CHECK_EQUAL(res.operation, COMPARISON_EQ);
     BOOST_CHECK_EQUAL(res.value, 80);
 
-    res = parse_comparison("boiler.temperature.GTE_80");
+    res = parse_comparison("boiler.temperature.GE_80");
     BOOST_CHECK_EQUAL(res.source, "boiler");
     BOOST_CHECK_EQUAL(res.source_endpoint, ENDPOINT_TEMPERATURE);
-    BOOST_CHECK_EQUAL(res.operation, COMPARISON_GTE);
+    BOOST_CHECK_EQUAL(res.operation, COMPARISON_GE);
     BOOST_CHECK_EQUAL(res.value, 80);
 
     res = parse_comparison("boiler.temperature.GT_80");
@@ -319,8 +326,8 @@ bool hasEnding (string fullString, string ending) {
 BOOST_AUTO_TEST_CASE(test_command_generation) {
     ConfigInfoModel config_info;
     model_call_params_t params;
-    params.config = init.conf.get();
-    params.devices = init.devices.get();
+    params.config = init.conf;
+    params.devices = init.devices;
     params.request_data =
         "ID=1:TYPE=value:COMMAND=switcher.on";
 
@@ -338,4 +345,164 @@ BOOST_AUTO_TEST_CASE(test_command_generation) {
 
     auto_ptr<Command> cmd5(command_from_string(params, "boiler.off"));
     BOOST_CHECK(hasEnding(typeid(*cmd5.get()).name(), "SwitcherOff"));
+
+    BOOST_REQUIRE_THROW(
+        auto_ptr<Command>(command_from_string(params, "boiler.of")),
+        InteruptionHandling);
+
+    BOOST_REQUIRE_THROW(
+        auto_ptr<Command>(command_from_string(params, "switcher.temperature")),
+        InteruptionHandling);
+
+    BOOST_REQUIRE_THROW(
+        auto_ptr<Command>(command_from_string(params, "ah.temperature")),
+        InteruptionHandling);
+
+    BOOST_REQUIRE_THROW(
+        auto_ptr<Command>(command_from_string(params, "ah")),
+        InteruptionHandling);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_conditioned_schedule_getting) {
+    model_call_params_t params;
+    params.config = init.conf;
+    params.devices = init.devices;
+    params.request_data =
+        "ID=1:TYPE=value:COMMAND=switcher.on";
+    s_map ref;
+
+    ref.clear();
+    stringstream buf;
+    buf << "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=";
+    buf << time(NULL) + 4000;
+    buf << ":STOP=";
+    buf << time(NULL) + 40000;
+    buf << ":COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80";
+    BaseInstructionLine::deconstruct(buf.str(), ref);
+    ConditionInstructionLine instr(ref);
+
+    auto_ptr<BaseSchedule> cond_sched(get_conditioned(params, &instr));
+    BOOST_CHECK(dynamic_cast<ConditionedSchedule*>(cond_sched.get()) !=
+                (BaseSchedule*)NULL);
+
+    ref.clear();
+    buf.flush();
+    buf << "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=";
+    buf << time(NULL) - 4000;
+    buf << ":STOP=";
+    buf << time(NULL) + 40000;
+    buf << ":COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80";
+    BaseInstructionLine::deconstruct(buf.str(), ref);
+    ConditionInstructionLine instr1(ref);
+
+    BOOST_REQUIRE_THROW(
+        auto_ptr<BaseSchedule>((get_conditioned(params, &instr1))),
+        ScheduleSetupError);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_coupled_schedule_getting) {
+    model_call_params_t params;
+    params.config = init.conf;
+    params.devices = init.devices;
+    params.request_data =
+        "ID=1:TYPE=value:COMMAND=switcher.on";
+    s_map ref;
+
+    ref.clear();
+    stringstream buf;
+    buf << "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=";
+    buf << time(NULL) + 4000;
+    buf << ":STOP=";
+    buf << time(NULL) + 40000;
+    buf << ":COUPLE=boiler.off:COUPLING-INTERVAL=100:RESTART=2000";
+    BaseInstructionLine::deconstruct(buf.str(), ref);
+    CoupledInstructionLine instr(ref);
+
+    auto_ptr<BaseSchedule> cond_sched(get_coupled(params, &instr));
+    BOOST_CHECK(dynamic_cast<CoupledCommandSchedule*>(cond_sched.get()) !=
+                (BaseSchedule*)NULL);
+
+    ref.clear();
+    buf.flush();
+    buf << "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=";
+    buf << time(NULL) - 4000;
+    buf << ":STOP=";
+    buf << time(NULL) + 40000;
+    buf << ":COUPLE=boiler.off:COUPLING-INTERVAL=100:RESTART=2000";
+    BaseInstructionLine::deconstruct(buf.str(), ref);
+    CoupledInstructionLine instr1(ref);
+
+    BOOST_REQUIRE_THROW(
+        auto_ptr<BaseSchedule>((get_coupled(params, &instr1))),
+        ScheduleSetupError);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_single_schedule_getting) {
+    model_call_params_t params;
+    params.config = init.conf;
+    params.devices = init.devices;
+    params.request_data =
+        "ID=1:TYPE=value:COMMAND=switcher.on";
+    s_map ref;
+
+    ref.clear();
+    stringstream buf;
+    buf << "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=";
+    buf << time(NULL) + 4000;
+    buf << ":STOP=";
+    buf << time(NULL) + 40000;
+    buf << ":RESTART=2000";
+    BaseInstructionLine::deconstruct(buf.str(), ref);
+    SingleInstructionLine instr(ref);
+
+    auto_ptr<BaseSchedule> cond_sched(get_single(params, &instr));
+    BOOST_CHECK(dynamic_cast<SingleCommandSchedule*>(cond_sched.get()) !=
+                (BaseSchedule*)NULL);
+
+    ref.clear();
+    buf.flush();
+    buf << "ID=1:NAME=boiler-on:COMMAND=boiler.on:START=";
+    buf << time(NULL) - 4000;
+    buf << ":STOP=";
+    buf << time(NULL) + 40000;
+    buf << ":RESTART=2000";
+    BaseInstructionLine::deconstruct(buf.str(), ref);
+    SingleInstructionLine instr1(ref);
+
+    BOOST_REQUIRE_THROW(
+        auto_ptr<BaseSchedule>((get_single(params, &instr1))),
+        ScheduleSetupError);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
+    model_call_params_t params;
+    auto_ptr<NamedSchedule> sched(new NamedSchedule());
+    params.config = init.conf;
+    params.devices = init.devices;
+    params.sched = sched.get();
+
+    string req =
+        "ID=0xffff:TYPE=VALUE:COMMAND=temperature.temperature\n"
+        "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
+        "ID=2:TYPE=COUPLE:NAME=2:COMMAND=boiler.on:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
+        "ID=3:TYPE=CONDITION:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
+    stringstream buf;
+    buf << time(NULL) + 4000;
+    boost::replace_all(req, "replaceit", buf.str());
+    params.request_data = req;
+
+    InstructionListModel model;
+    BOOST_CHECK_EQUAL(model.execute(params), "ID=0xffff:SUCCESS=true:VALUE=0\n");
+
+    BOOST_CHECK_EQUAL(params.sched->size(), 3);
+    BOOST_CHECK(dynamic_cast<SingleCommandSchedule*>((*params.sched)["1"])
+                != NULL);
+    BOOST_CHECK(dynamic_cast<CoupledCommandSchedule*>((*params.sched)["2"])
+                != NULL);
+    BOOST_CHECK(dynamic_cast<ConditionedSchedule*>((*params.sched)["3"])
+                != NULL);
 }

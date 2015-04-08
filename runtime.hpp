@@ -144,7 +144,7 @@ public:
 
 
 class NamedSchedule: public BaseSchedule,
-                     protected std::map<std::string, BaseSchedule*> {
+                     public std::map<std::string, BaseSchedule*> {
 public:
     virtual ~NamedSchedule() throw();
     Commands *get_commands(time_t tm);
