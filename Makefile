@@ -44,5 +44,5 @@ test_confbind: confbind.o targetdevice.o confparser.o test/test_confbind.cpp
 test_commands: commands.o confbind.o targetdevice.o confparser.o test/test_commands.cpp
 	$(COMPILE) -o test_commands confbind.o targetdevice.o confparser.o commands.o test/test_commands.cpp $(TESTFLAGS) -lyaml -lpthread
 
-test_model: confbind.o targetdevice.o confparser.o model.o test/test_model.cpp
-	$(COMPILE) -o test_model model.o confbind.o targetdevice.o confparser.o test/test_model.cpp $(TESTFLAGS) -lyaml
+test_model: confbind.o targetdevice.o confparser.o model.o commands.o test/test_model.cpp
+	$(COMPILE) -o test_model commands.o model.o confbind.o targetdevice.o confparser.o test/test_model.cpp $(TESTFLAGS) -lyaml

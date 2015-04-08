@@ -3,8 +3,12 @@
 #include <cctype>
 #include <locale>
 #include <memory>
+#include <vector>
+#include <set>
 
 #include "model.hpp"
+#include "commands.hpp"
+#include "devices.hpp"
 
 using namespace std;
 
@@ -17,7 +21,8 @@ const char
     *STOP = "STOP",
     *COUPLING_INTERVAL = "COUPLING-INTERVAL",
     *RESTART = "RESTART",
-    *CONDITION = "CONDITION";
+    *CONDITION = "CONDITION",
+    *TYPE = "TYPE";
 
 
 string &rtrim(string &s) {
@@ -27,7 +32,7 @@ string &rtrim(string &s) {
 }
 
 
-std::string ConfigInfoModel::execute(model_call_params_t &params)
+string ConfigInfoModel::execute(model_call_params_t &params)
     throw(InteruptionHandling) {
     string request_data = params.request_data;
     rtrim(request_data);
@@ -82,7 +87,7 @@ int pair_split(string &source, const char delim, spair &dest) {
 void BaseInstructionLine::deconstruct(string source, s_map &dest) {
     stringstream buf(source);
     string item;
-    while(std::getline(buf, item, ':')) {
+    while(getline(buf, item, ':')) {
         spair data;
         if(pair_split(item, '=', data) < 0) {
             stringstream buf;
@@ -251,4 +256,103 @@ ConditionInstructionLine::ConditionInstructionLine(s_map &ref) {
     start = need_int(ref[START], START);
 
     comparison = parse_comparison(ref[CONDITION]);
+}
+
+
+class StringSet: public set<string> {
+public:
+    StringSet& operator<<(string operation) {
+        insert(operation);
+        return *this;
+    }
+
+    bool has(string operation) {
+        StringSet::iterator it = find(operation);
+        return it != end();
+    }
+};
+
+
+class SupportedCommands: public map<device_type_t, StringSet> {
+public:
+    bool is_supported(device_type_t device_type, string operation) {
+        SupportedCommands::iterator it = find(device_type);
+        if(it == end()) {
+            return false;
+        }
+        return it->second.has(operation);
+    }
+
+    SupportedCommands() {
+        (*this)[DEVICE_BOILER] << "on" << "off" << "temperature";
+        (*this)[DEVICE_SWITCHER] << "on" << "off";
+        (*this)[DEVICE_THERMOSWITCHER] << "temperature";
+    };
+
+};
+
+SupportedCommands supported_commands;
+
+
+Command *command_from_string(model_call_params_t &params, string cmd) {
+    spair couple;
+    if(pair_split(cmd, '.', couple) < 0) {
+        throw InteruptionHandling(string("Wrong command: ") + cmd);
+    }
+
+    config_devices_t::const_iterator it =
+        params.config->devices().find(couple.first);
+    if(it == params.config->devices().end()) {
+        stringstream buf;
+        buf << "No such device: " << couple.first;
+        throw InteruptionHandling(buf.str());
+    }
+
+    if(!supported_commands.is_supported(it->second->id(), couple.second)) {
+        stringstream buf;
+        buf << "Device " << couple.first << " does not support " <<
+            couple.second << " operation";
+        throw InteruptionHandling(buf.str());
+    }
+
+    if(couple.second == "on") {
+        return new SwitcherOn(params.devices->device(couple.first)->switcher);
+    } else if(couple.second == "off") {
+        return new SwitcherOff(params.devices->device(couple.first)->switcher);
+    } else if(couple.second == "temperature") {
+        return new
+            TemperatureGet(params.devices->device(couple.first)->temperature);
+    } else {
+        throw InteruptionHandling("That should not happen");
+    }
+}
+
+
+string InstructionListModel::execute(model_call_params_t &params)
+    throw(InteruptionHandling) {
+    stringstream buf(params.request_data);
+    string line;
+    while(getline(buf, line, '\n')) {
+        s_map ref;
+        BaseInstructionLine::deconstruct(line, ref);
+
+        key_required(ref, TYPE);
+        string type = ref[TYPE];
+
+        vector<ValueInstructionLine *> values;
+        vector<SingleInstructionLine *> singles;
+        vector<CoupledInstructionLine *> couples;
+        vector<ConditionInstructionLine *> conditionals;
+        if(type == "VALUE") {
+            values.push_back(new ValueInstructionLine(ref));
+        } else if(type == "SINGLE") {
+            singles.push_back(new SingleInstructionLine(ref));
+        } else if(type == "COUPLE") {
+            couples.push_back(new CoupledInstructionLine(ref));
+        } else if(type == "CONDITION") {
+            conditionals.push_back(new ConditionInstructionLine(ref));
+        }
+    }
+
+    return "";
 }

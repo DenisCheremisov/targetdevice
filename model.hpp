@@ -2,6 +2,7 @@
 #define _MODEL_HPP_DEFINED_
 
 #include "confbind.hpp"
+#include "commands.hpp"
 #include "controller.hpp"
 
 struct model_call_params_t {
@@ -123,4 +124,14 @@ public:
 };
 
 
+class InstructionListModel: public BaseModel {
+public:
+    ~InstructionListModel() throw() {};
+
+    std::string execute(model_call_params_t &params)
+        throw(InteruptionHandling);
+};
+
+
+Command *command_from_string(model_call_params_t &params, std::string cmd);
 #endif

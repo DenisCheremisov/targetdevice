@@ -304,3 +304,38 @@ BOOST_AUTO_TEST_CASE(test_conditioned_instruction) {
                             InteruptionHandling);
     }
 }
+
+
+bool hasEnding (string fullString, string ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(),
+                                         ending.length(), ending));
+    } else {
+        return false;
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(test_command_generation) {
+    ConfigInfoModel config_info;
+    model_call_params_t params;
+    params.config = init.conf.get();
+    params.devices = init.devices.get();
+    params.request_data =
+        "ID=1:TYPE=value:COMMAND=switcher.on";
+
+    auto_ptr<Command> cmd1(command_from_string(params, "switcher.on"));
+    BOOST_CHECK(hasEnding(typeid(*cmd1.get()).name(), "SwitcherOn"));
+
+    auto_ptr<Command> cmd2(command_from_string(params, "switcher.off"));
+    BOOST_CHECK(hasEnding(typeid(*cmd2.get()).name(), "SwitcherOff"));
+
+    auto_ptr<Command> cmd3(command_from_string(params, "temperature.temperature"));
+    BOOST_CHECK(hasEnding(typeid(*cmd3.get()).name(), "TemperatureGet"));
+
+    auto_ptr<Command> cmd4(command_from_string(params, "boiler.on"));
+    BOOST_CHECK(hasEnding(typeid(*cmd4.get()).name(), "SwitcherOn"));
+
+    auto_ptr<Command> cmd5(command_from_string(params, "boiler.off"));
+    BOOST_CHECK(hasEnding(typeid(*cmd5.get()).name(), "SwitcherOff"));
+}

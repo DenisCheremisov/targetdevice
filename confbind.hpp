@@ -83,6 +83,11 @@ public:
 };
 
 
+#define DEVICE_FROM_REFERENCE(ref) \
+    (ref.type == DEVICE_BOILER)?ref.boiler: ( \
+    (ref.type == DEVICE_THERMOSWITCHER)?ref.temperature: ref.switcher)
+
+
 class Devices: public std::map<std::string, device_reference_t*> {
 public:
     virtual ~Devices() throw();
