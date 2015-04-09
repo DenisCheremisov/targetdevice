@@ -26,6 +26,9 @@ background.o: background.cpp
 model.o: model.cpp model.hpp
 	$(COMPILE) -c model.cpp
 
+network.o: network.cpp network.hpp
+	$(COMPILE) -c network.cpp
+
 clean:
 	rm *.o test_*
 
@@ -46,3 +49,6 @@ test_commands: commands.o confbind.o targetdevice.o confparser.o test/test_comma
 
 test_model: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o test/test_model.cpp
 	$(COMPILE) -o test_model runtime.o commands.o model.o confbind.o targetdevice.o confparser.o test/test_model.cpp $(TESTFLAGS) -lyaml
+
+test_network: network.o test/test_network.cpp
+	$(COMPILE) -o test_network network.o test/test_network.cpp $(TESTFLAGS) -lssl -lcrypto

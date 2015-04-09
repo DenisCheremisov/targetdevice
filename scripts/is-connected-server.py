@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import os
 import socket, ssl
 
 
-bindsocket = socket.socket()
-bindsocket.bind(('', 10023))
-bindsocket.listen(5)
-bindsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+try:
+    bindsocket = socket.socket()
+    bindsocket.bind(('', 10023))
+    bindsocket.listen(5)
+    bindsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+except socket.error:
+    os.sys.exit(0)
 
 
 def deal_with_client(connstream):
@@ -16,7 +20,7 @@ def deal_with_client(connstream):
     if data.rstrip().split(':')[0] != 'ready':
         response = '0:error-intro'
     else:
-        response = [
+        response = '\n'.join([
             '0:is-connected',
             '1:adc-get:channel=2',
             '2:adc-get:channel=1',
@@ -40,8 +44,9 @@ def deal_with_client(connstream):
             '20:read-line:lineno=5',
             '21:afr-set:value=2000',
             '22:afr-set:value=200'
-            ]
-    connstream.write('\n'.join(response))
+            ])
+
+    connstream.write(response)
     for ___ in zip(response, connstream.read().split('\n')):
         print '{:32} -> {}'.format(*___)
     return
