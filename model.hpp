@@ -29,16 +29,6 @@ public:
 };
 
 
-class StopChainModel: public BaseModel {
-public:
-    ~StopChainModel() throw() {};
-    std::string execute(model_call_params_t &params)
-        throw(InteruptionHandling) {
-        throw InteruptionHandling("OK");
-    }
-};
-
-
 class ConfigInfoModel: public BaseModel {
 public:
     ~ConfigInfoModel() throw() {};

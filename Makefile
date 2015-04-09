@@ -29,6 +29,9 @@ model.o: model.cpp model.hpp
 network.o: network.cpp network.hpp
 	$(COMPILE) -c network.cpp
 
+controller.o: controller.cpp controller.hpp
+	$(COMPILE) -c controller.cpp
+
 clean:
 	rm *.o test_*
 

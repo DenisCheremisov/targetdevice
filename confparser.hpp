@@ -129,10 +129,11 @@ private:
     config_daemon_t *_daemon;
     config_devices_t *_devices;
 
+public:
     static int version;
     static time_t startup;
+    static time_t conf_change;
 
-public:
     Config(config_drivers_t *drvrs,
            config_connection_t *conn,
            config_daemon_t *dmn,
@@ -167,6 +168,8 @@ public:
     }
 };
 
+
+FILE *open_conf_fp(const char *name);
 
 MapElement *raw_conf_parse(FILE *fp);
 Config *config_parse(MapElement *rawconf);
