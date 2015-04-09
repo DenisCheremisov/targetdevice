@@ -17,7 +17,7 @@ using namespace std;
 
 BOOST_AUTO_TEST_CASE(test_raw_parsing) {
     FILE *fp;
-    fp = fopen(YAML_TEST_FILE, "r");
+    fp = open_conf_fp(YAML_TEST_FILE);
     if(fp == NULL) {
         perror(YAML_TEST_FILE);
         throw runtime_error(string("Cannot open sample file: ") + YAML_TEST_FILE);

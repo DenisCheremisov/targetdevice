@@ -3,13 +3,17 @@
 #include <memory>
 #include <sstream>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "confparser.hpp"
 
 using namespace std;
 
 int Config::version = 1;
 time_t Config::startup = time(NULL);
-
+time_t Config::conf_change = 0;
 
 ParserError::ParserError(yaml_event_t *event, string message) {
     stringstream buf;
@@ -341,7 +345,7 @@ Config *config_parse(MapElement *_rawconf) {
     MapElement &connection = map_getter.get_field(rawconf, "", "connection");
     ScalarElement conn_parent = map_getter.parent_name();
     map_getter.check_fields(connection, conn_parent, "host,port,identity");
-   auto_ptr<config_connection_t> conn(new config_connection_t);
+    auto_ptr<config_connection_t> conn(new config_connection_t);
     conn->host = scalar_getter.get_string(connection, conn_parent, "host", true);
     conn->port = scalar_getter.get_number(connection, conn_parent, "port", PORT_LOWER_BOUND, PORT_UPPER_BOUND);
     conn->identity = scalar_getter.get_string(connection, conn_parent, "identity", true);
@@ -395,45 +399,65 @@ Config *config_parse(MapElement *_rawconf) {
     ScalarElement devices_parent = map_getter.parent_name();
     auto_ptr<config_devices_t> dvcs(new config_devices_t);
     key_list.clear();
-    for(MapElement::iterator it = devices.begin(); it != devices.end(); it++) {
+    for(MapElement::iterator it = devices.begin();
+        it != devices.end(); it++) {
         key_list.push_back(it->first);
     }
     key_list.sort(compare_scalars);
     map<ScalarElement, ScalarElement> relay_used, adc_used;
-    for(list<ScalarElement>::iterator it = key_list.begin(); it != key_list.end(); it++) {
-        MapElement &deviceconf = map_getter.get_field(devices, devices_parent, *it);
+    for(list<ScalarElement>::iterator it = key_list.begin();
+        it != key_list.end(); it++) {
+        MapElement &deviceconf = map_getter.get_field(
+            devices, devices_parent, *it);
         ScalarElement device_parent = map_getter.parent_name();
 
-        ScalarElement device_type = scalar_getter.get_string(deviceconf, device_parent, "type", true);
+        ScalarElement device_type = scalar_getter.get_string(
+            deviceconf, device_parent, "type", true);
         if(device_type == BOILER_DESCRIPTOR) {
-            map_getter.check_fields(deviceconf, device_parent, "type,relay,temperature", "boiling device description");
-            serial_link_t relay = scalar_getter.get_link(deviceconf, device_parent, "relay",
-                                                         drvrs,
-                                                         relay_used, RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
-            serial_link_t temperature = scalar_getter.get_link(deviceconf, device_parent, "temperature",
-                                                               drvrs,
-                                                               adc_used, ADC_LOWER_BOUND, ADC_UPPER_BOUND);
+            map_getter.check_fields(deviceconf, device_parent,
+                "type,relay,temperature", "boiling device description");
+            serial_link_t relay = scalar_getter.get_link(
+                deviceconf, device_parent, "relay", drvrs, relay_used,
+                RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
+            serial_link_t temperature = scalar_getter.get_link(
+                deviceconf, device_parent, "temperature", drvrs, adc_used,
+                ADC_LOWER_BOUND, ADC_UPPER_BOUND);
             (*dvcs)[device_parent] = new Boiler(relay, temperature);
         } else if(device_type == SWITCHER_DESCRIPTOR) {
-            map_getter.check_fields(deviceconf, device_parent, "type,relay", " switcher description");
-            serial_link_t relay = scalar_getter.get_link(deviceconf, device_parent, "relay",
-                                                         drvrs,
-                                                         relay_used, RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
+            map_getter.check_fields(
+                deviceconf, device_parent, "type,relay",
+                " switcher description");
+            serial_link_t relay = scalar_getter.get_link(
+                deviceconf, device_parent, "relay", drvrs, relay_used,
+                RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
             (*dvcs)[device_parent] = new Switcher(relay);
         } else if(device_type == THERMALSWITCHER_DESCRIPTOR) {
-            map_getter.check_fields(deviceconf, device_parent, "type,relay,temperature",
-                                    "temperature measurement device description");
-            serial_link_t relay = scalar_getter.get_link(deviceconf, device_parent, "relay",
-                                                         drvrs,
-                                                         relay_used, RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
-            serial_link_t temperature = scalar_getter.get_link(deviceconf, device_parent, "temperature",
-                                                               drvrs,
-                                                               adc_used, ADC_LOWER_BOUND, ADC_UPPER_BOUND);
+            map_getter.check_fields(
+                deviceconf, device_parent, "type,relay,temperature",
+                "temperature measurement device description");
+            serial_link_t relay = scalar_getter.get_link(
+                deviceconf, device_parent, "relay", drvrs, relay_used,
+                RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
+            serial_link_t temperature = scalar_getter.get_link(
+                deviceconf, device_parent, "temperature", drvrs,  adc_used,
+                ADC_LOWER_BOUND, ADC_UPPER_BOUND);
             (*dvcs)[device_parent] = new Thermoswitcher(temperature);
         } else {
             throw ParserError(device_type, device_type + " not supported");
         }
     }
 
-    return new Config(drvrs.release(), conn.release(), dmn.release(), dvcs.release());
+    return new Config(
+        drvrs.release(), conn.release(), dmn.release(), dvcs.release());
+}
+
+
+FILE *open_conf_fp(const char *name) {
+    FILE *res = fopen(name, "r");
+    if(res != NULL) {
+        struct stat attrib;
+        fstat(res->_fileno, &attrib);
+        Config::conf_change = attrib.st_mtim.tv_sec;
+    }
+    return res;
 }
