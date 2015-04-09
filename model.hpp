@@ -3,8 +3,14 @@
 
 #include "confbind.hpp"
 #include "commands.hpp"
-#include "controller.hpp"
 #include "runtime.hpp"
+
+
+class InteruptionHandling: public std::string {
+public:
+    InteruptionHandling(std::string message): std::string(message) {};
+};
+
 
 struct model_call_params_t {
     Config *config;

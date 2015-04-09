@@ -2,13 +2,11 @@
 #define _CONTROLER_HPP_INCLUDED_
 
 
+#include "confparser.hpp"
 #include "confbind.hpp"
+#include "model.hpp"
 
 
-class InteruptionHandling: public std::string {
-public:
-    InteruptionHandling(std::string message): std::string(message) {};
-};
 
 
 #endif
