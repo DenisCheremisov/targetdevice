@@ -22,6 +22,8 @@ public:
         config(_conf), devices(_devices), sched(_sched) {};
     virtual ~Controller() throw() {};
 
+    BaseConnection* get_connection();
+
     std::string greetings();
 
     void execute();

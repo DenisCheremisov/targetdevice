@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <memory>
 
 #include "controller.hpp"
 
@@ -14,6 +15,15 @@ string Controller::greetings() {
     buf << "CONFIG=" << Config::conf_change << "\n";
 
     return buf.str();
+}
+
+
+BaseConnection* Controller::get_connection() {
+    auto_ptr<Connection> conn(new Connection);
+    conn->set_connection(config->connection().host,
+                         config->connection().port);
+
+    return conn.release();
 }
 
 
@@ -45,16 +55,14 @@ std::string response(bool success, string body) {
 
 
 void Controller::execute() {
-    Connection conn;
+    auto_ptr<BaseConnection> conn(get_connection());
 
-    conn.set_connection(config->connection().host, config->connection().port);
+    conn->send(greetings());
 
-    conn.send(greetings());
-
-    istringstream data(conn.receive());
+    istringstream data(conn->receive());
     string req_type;
     if(!getline(data, req_type, '\n')) {
-        conn.send(response(false, "Wrong request"));
+        conn->send(response(false, "Wrong request"));
         return;
     }
 
@@ -76,5 +84,5 @@ void Controller::execute() {
         result = response(false, req_type + ": operation not supported");
     }
 
-    conn.send(result);
+    conn->send(result);
 }
