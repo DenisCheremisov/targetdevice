@@ -337,7 +337,8 @@ BOOST_AUTO_TEST_CASE(test_command_generation) {
     auto_ptr<Command> cmd2(command_from_string(params, "switcher.off"));
     BOOST_CHECK(hasEnding(typeid(*cmd2.get()).name(), "SwitcherOff"));
 
-    auto_ptr<Command> cmd3(command_from_string(params, "temperature.temperature"));
+    auto_ptr<Command> cmd3(command_from_string(params,
+                                               "temperature.temperature"));
     BOOST_CHECK(hasEnding(typeid(*cmd3.get()).name(), "TemperatureGet"));
 
     auto_ptr<Command> cmd4(command_from_string(params, "boiler.on"));
@@ -496,7 +497,7 @@ BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
     params.request_data = req;
 
     InstructionListModel model;
-    BOOST_CHECK_EQUAL(model.execute(params), "ID=0xffff:SUCCESS=true:VALUE=0\n");
+    BOOST_CHECK_EQUAL(model.execute(params), "ID=0xffff:SUCCESS=1:VALUE=0\n");
 
     BOOST_CHECK_EQUAL(params.sched->size(), 3);
     BOOST_CHECK(dynamic_cast<SingleCommandSchedule*>((*params.sched)["1"])

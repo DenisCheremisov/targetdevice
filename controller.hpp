@@ -17,12 +17,11 @@ private:
 public:
     Controller(Config *_conf,
                Devices *_devices,
-               NamedSchedule *_sched,
-               time_t _startup, time_t _conf_change):
+               NamedSchedule *_sched):
         config(_conf), devices(_devices), sched(_sched) {};
     virtual ~Controller() throw() {};
 
-    BaseConnection* get_connection();
+    virtual BaseConnection* get_connection();
 
     std::string greetings();
 

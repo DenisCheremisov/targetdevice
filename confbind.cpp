@@ -34,7 +34,7 @@ DeviceSwitcher::DeviceSwitcher(Drivers &drivers, Switcher *conf) {
 
 
 void DeviceSwitcher::turn_on() {
-    relay_device->relay_set(this->relay_port, 1);
+    relay_device->relay_set(this->get_relay_port(), 1);
 }
 
 
@@ -50,7 +50,7 @@ DeviceTemperature::DeviceTemperature(Drivers &drivers, Thermoswitcher *conf) {
 
 
 double DeviceTemperature::get_temperature() {
-    int value = temperature_device->adc_get(this->adc_port);
+    int value = temperature_device->adc_get(this->get_adc_port());
     return value/1023.*5.;
 }
 
@@ -73,16 +73,11 @@ Devices::Devices(Drivers &drivers, const config_devices_t &conf) {
                 new device_reference_t(new DeviceSwitcher(drivers, sw));
             break;
         }
-        case DEVICE_THERMOSWITCHER: {
+        case DEVICE_THERMOSWITCHER:
+        case DEVICE_BOILER: {
             Thermoswitcher *trm = dynamic_cast<Thermoswitcher*>(it->second);
             (*this)[it->first] =
                 new device_reference_t(new DeviceTemperature(drivers, trm));
-            break;
-        }
-        case DEVICE_BOILER: {
-            Boiler *blr = dynamic_cast<Boiler*>(it->second);
-            (*this)[it->first] =
-                new device_reference_t(new DeviceBoiler(drivers, blr));
             break;
         }
         default:

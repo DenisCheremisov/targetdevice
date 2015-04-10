@@ -49,10 +49,10 @@ string ConfigInfoModel::execute(model_call_params_t &params)
     }
 
     stringstream buf;
-    for(Devices::iterator it = params.devices->begin();
-        it != params.devices->end(); it++) {
+    for(config_devices_t::const_iterator it = params.config->devices().begin();
+        it != params.config->devices().end(); it++) {
         buf << it->first << ":";
-        switch(it->second->type) {
+        switch(it->second->id()) {
         case DEVICE_BOILER:
             buf << "boiler";
             break;
@@ -472,12 +472,11 @@ string InstructionListModel::execute(model_call_params_t &params)
         SingleInstructionLine *item = *it;
         try {
             res[item->name] = get_single(params, item);
-        } catch(ScheduleSetupError &er) {
+        } catch(ScheduleSetupError er) {
             stringstream buf;
             buf << item->id << ": " << er.what();
             throw InteruptionHandling(buf.str());
         }
-
     }
 
     for(safe_vector<CoupledInstructionLine>::iterator it = couples.begin();
@@ -485,7 +484,7 @@ string InstructionListModel::execute(model_call_params_t &params)
         CoupledInstructionLine *item = *it;
         try {
             res[item->name] = get_coupled(params, item);
-        } catch(ScheduleSetupError &er) {
+        } catch(ScheduleSetupError er) {
             stringstream buf;
             buf << item->id << ": " << er.what();
             throw InteruptionHandling(buf.str());
@@ -498,7 +497,7 @@ string InstructionListModel::execute(model_call_params_t &params)
 
         try {
             res[item->name] = get_conditioned(params, item);
-        } catch(ScheduleSetupError &er) {
+        } catch(ScheduleSetupError er) {
             stringstream buf;
             buf << item->id << ": " << er.what();
             throw InteruptionHandling(buf.str());
@@ -521,10 +520,10 @@ string InstructionListModel::execute(model_call_params_t &params)
         auto_ptr<Command> cmd(command_from_string(params, item->command));
         auto_ptr<Result> value(cmd->execute());
         if(dynamic_cast<ErrorResult*>(value.get())) {
-            result << "ID=" << item->id << ":SUCCESS=false:ERROR=" <<
+            result << "ID=" << item->id << ":SUCCESS=0:ERROR=" <<
                 value->value();
         } else {
-            result << "ID=" << item->id << ":SUCCESS=true:VALUE=" <<
+            result << "ID=" << item->id << ":SUCCESS=1:VALUE=" <<
                 value->value();
         }
         result << endl;

@@ -8,7 +8,7 @@ TESTFLAGS=-lboost_unit_test_framework
 targetdevice.o: targetdevice.cpp targetdevice.hpp
 	$(COMPILE) -c targetdevice.cpp
 
-confparser.o: confparser.cpp confparser.hpp
+confparser.o: confparser.cpp confparser.hpp drivers.hpp devices.hpp
 	$(COMPILE) -c confparser.cpp
 
 runtime.o: runtime.cpp runtime.hpp
@@ -55,3 +55,6 @@ test_model: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o 
 
 test_network: network.o test/test_network.cpp
 	$(COMPILE) -o test_network network.o test/test_network.cpp $(TESTFLAGS) -lssl -lcrypto
+
+test_controller: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o test/test_controller.cpp
+	$(COMPILE) -o test_controller runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o test/test_controller.cpp $(TESTFLAGS) -lyaml -lssl -lcrypto

@@ -19,11 +19,18 @@ public:
 class BaseDescrDevice {
 public:
     virtual ~BaseDescrDevice() throw() {};
+
+    virtual int get_relay_port() {
+        return -1;
+    }
+    virtual int get_adc_port() {
+        return -1;
+    }
 };
 
 
-class DeviceSwitcher: public BaseDescrDevice {
-private:
+class DeviceSwitcher: virtual public BaseDescrDevice {
+protected:
     TargetDeviceDriver *relay_device;
     int relay_port;
 
@@ -31,13 +38,17 @@ public:
     ~DeviceSwitcher() throw() {};
     DeviceSwitcher(Drivers &drivers, Switcher *conf);
 
-    void turn_on();
-    void turn_off();
+    int get_relay_port() {
+        return relay_port;
+    }
+
+    virtual void turn_on();
+    virtual void turn_off();
 };
 
 
-class DeviceTemperature {
-private:
+class DeviceTemperature: virtual public BaseDescrDevice {
+protected:
     TargetDeviceDriver *temperature_device;
     int adc_port;
 
@@ -45,7 +56,11 @@ public:
     ~DeviceTemperature() throw() {};
     DeviceTemperature(Drivers &drivers, Thermoswitcher *conf);
 
-    double get_temperature();
+    int get_adc_port() {
+        return adc_port;
+    }
+
+    virtual double get_temperature();
 };
 
 
@@ -55,6 +70,16 @@ public:
     DeviceBoiler(Drivers &drivers,  Boiler *conf):
         DeviceSwitcher(drivers, conf),
         DeviceTemperature(drivers, conf) {};
+
+    int get_relay_port() {
+        int res = DeviceSwitcher::get_relay_port();
+        return res;
+    }
+
+    int get_adc_port() {
+        int res = DeviceTemperature::get_adc_port();
+        return res;
+    };
 };
 
 

@@ -13,6 +13,9 @@ Result *SwitcherOn::execute() throw() {
     } catch(TargetDeviceOperationError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
                                error.what());
+    } catch(TargetDeviceValidationError error) {
+        return new ErrorResult(RESULT_SERIAL_ERROR,
+                               error.what());
     }
 }
 
@@ -26,6 +29,9 @@ Result *SwitcherOff::execute() throw() {
         return new ErrorResult(RESULT_SERIAL_ERROR,
                                error.what());
     } catch(TargetDeviceOperationError error) {
+        return new ErrorResult(RESULT_SERIAL_ERROR,
+                               error.what());
+    } catch(TargetDeviceValidationError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
                                error.what());
     }
@@ -43,6 +49,9 @@ Result *TemperatureGet::execute() throw() {
     } catch(TargetDeviceOperationError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
                                error.what());
+    } catch(TargetDeviceValidationError error) {
+        return new ErrorResult(RESULT_SERIAL_ERROR,
+                               error.what());
     }
 }
 
@@ -56,6 +65,9 @@ Result *BoilerOn::execute() throw() {
         return new ErrorResult(RESULT_SERIAL_ERROR,
                                error.what());
     } catch(TargetDeviceOperationError error) {
+        return new ErrorResult(RESULT_SERIAL_ERROR,
+                               error.what());
+    } catch(TargetDeviceValidationError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
                                error.what());
     }
@@ -73,6 +85,9 @@ Result *BoilerOff::execute() throw() {
     } catch(TargetDeviceOperationError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
                                error.what());
+    } catch(TargetDeviceValidationError error) {
+        return new ErrorResult(RESULT_SERIAL_ERROR,
+                               error.what());
     }
 }
 
@@ -86,6 +101,9 @@ Result *BoilerTemperatureGet::execute() throw() {
         return new ErrorResult(RESULT_SERIAL_ERROR,
                                error.what());
     } catch(TargetDeviceOperationError error) {
+        return new ErrorResult(RESULT_SERIAL_ERROR,
+                               error.what());
+    } catch(TargetDeviceValidationError error) {
         return new ErrorResult(RESULT_SERIAL_ERROR,
                                error.what());
     }

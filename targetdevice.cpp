@@ -204,10 +204,12 @@ string TargetDeviceDriver::line_get_all() {
 void TargetDeviceDriver::line_set(int lineno, int value) {
     stringstream buf;
     if(lineno < LINE_LOWER_BOUND || lineno > LINE_UPPER_BOUND) {
-        throw TargetDeviceValidationError("Line number out of bounds 1..18");
+        buf << "Line number out of bounds 1..18: " << lineno;
+        throw TargetDeviceValidationError(buf.str());
     }
     if(value != 0 && value != 1) {
-        throw TargetDeviceValidationError("Value out of bounds 0..1");
+        buf << "Value out of bounds 0..1: " << value;
+        throw TargetDeviceValidationError(buf.str());
     }
 
     buf << "$KE,WR," << lineno << "," << value << "\r\n";
@@ -227,10 +229,12 @@ void TargetDeviceDriver::line_set(int lineno, int value) {
 void TargetDeviceDriver::relay_set(int relayno, int value) {
     stringstream buf;
     if(relayno < RELAY_LOWER_BOUND || relayno > RELAY_UPPER_BOUND) {
-        throw TargetDeviceValidationError("Relay number out of bounds 1..4");
+        buf << "Relay number out of bounds 1..4: " << relayno;
+        throw TargetDeviceValidationError(buf.str());
     }
     if(value != 0 && value != 1) {
-        throw TargetDeviceValidationError("Value out of bounds 0..1");
+        buf << "Value out of bounds 0..1: " << value;
+        throw TargetDeviceValidationError(buf.str());
     }
 
     buf << "$KE,REL," << relayno << "," << value << "\r\n";
@@ -294,7 +298,8 @@ string TargetDeviceDriver::io_get_all() {
 void TargetDeviceDriver::io_set(int lineno, int value) {
     stringstream buf;
     if(lineno < LINE_LOWER_BOUND || lineno > LINE_UPPER_BOUND) {
-        throw TargetDeviceValidationError("Line number out of bounds 1..18");
+        buf << "Line number out of bounds 1..18: " << lineno;
+        throw TargetDeviceValidationError(buf.str());
     }
     if(value != 0 && value != 1) {
         throw TargetDeviceValidationError("Value out of bounds 0..1");
@@ -314,7 +319,8 @@ void TargetDeviceDriver::io_set(int lineno, int value) {
 int TargetDeviceDriver::adc_get(int channel) {
     stringstream buf;
     if(channel < ADC_LOWER_BOUND || channel > ADC_UPPER_BOUND) {
-        throw TargetDeviceValidationError("Channel number out of bounds 1..4");
+        buf << "Channel number out of bounds 1..4: " << channel;
+        throw TargetDeviceValidationError(buf.str());
     }
 
     buf << "$KE,ADC," << channel << "\r\n";

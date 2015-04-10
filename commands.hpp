@@ -34,7 +34,7 @@ private:
 
 public:
     ~TemperatureGet() throw() {};
-    TemperatureGet(DeviceTemperature *dvc): device(dvc) {};
+    TemperatureGet(DeviceTemperature *dvc): device(dvc) {}
 
     Result *execute() throw();
 };

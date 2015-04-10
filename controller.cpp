@@ -59,25 +59,32 @@ void Controller::execute() {
 
     conn->send(greetings());
 
-    istringstream data(conn->receive());
+    string data = conn->receive();
+    size_t pos = data.find('\n');
     string req_type;
-    if(!getline(data, req_type, '\n')) {
-        conn->send(response(false, "Wrong request"));
-        return;
+    string req_data;
+    string result;
+
+    if(pos == string::npos) {
+        req_type = data;
+        req_data = "";
+    } else {
+        req_type = data.substr(0, pos);
+        req_data = data.substr(pos + 1, data.length() - pos - 1);
     }
 
-    string result;
     try {
         BaseModel *model = models.at(req_type);
         model_call_params_t params;
         params.config = config;
         params.devices = devices;
         params.sched = sched;
+        params.request_data = req_data;
         try {
             result = response(true, model->execute(params));
         } catch(InteruptionHandling e) {
             result = response(false, e);
-        } catch(exception e) {
+        } catch(exception &e) {
             result = response(false, e.what());
         }
     } catch(out_of_range e) {
