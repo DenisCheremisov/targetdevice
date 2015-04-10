@@ -319,21 +319,29 @@ Command *command_from_string(model_call_params_t &params, string cmd) {
     }
 
     if(couple.second == "on") {
-        return new SwitcherOn(params.devices->device(couple.first)->switcher);
+        try {
+            return new SwitcherOn(params.devices->device(couple.first));
+        } catch(CommandSetupError e) {
+            stringstream buf;
+            buf << "Device " << couple.first << " is not a switcher";
+            throw InteruptionHandling(buf.str());
+        }
     } else if(couple.second == "off") {
-        return new SwitcherOff(params.devices->device(couple.first)->switcher);
+        try {
+            return new SwitcherOff(params.devices->device(couple.first));
+        } catch(CommandSetupError e) {
+            stringstream buf;
+            buf << "Device " << couple.first << " is not a switcher";
+            throw InteruptionHandling(buf.str());
+        }
     } else if(couple.second == "temperature") {
-        switch(params.devices->device(couple.first)->type) {
-        case DEVICE_THERMOSWITCHER:
-            return new
-                TemperatureGet(
-                    params.devices->device(couple.first)->temperature);
-        case DEVICE_BOILER:
-            return new
-                TemperatureGet(params.devices->device(couple.first)->boiler);
-        default:
-            throw InteruptionHandling("That is not temperature device");
-        };
+        try {
+            return new TemperatureGet(params.devices->device(couple.first));
+        } catch(CommandSetupError e) {
+            stringstream buf;
+            buf << "Device " << couple.first << " cannot take a temperature";
+            throw InteruptionHandling(buf.str());
+        }
     } else {
         throw InteruptionHandling("That should not happen");
     }
@@ -435,12 +443,24 @@ BaseSchedule* get_conditioned(model_call_params_t &params,
     auto_ptr<Command> cmd(command_from_string(params, item->command));
     auto_ptr<Command> couple(command_from_string(params, item->couple));
 
-    BaseSchedule *res = new ConditionedSchedule(cmd.get(), couple.get(), cond.get(),
-                                                 item->start, item->stop);
+    BaseSchedule *res = new ConditionedSchedule(
+        cmd.get(), couple.get(), cond.get(), item->start, item->stop);
     cmd.release();
     couple.release();
     cond.release();
     return res;
+}
+
+
+std::string resp_item(string id, bool status, string body) {
+    stringstream buf;
+    buf << "ID=" << id << ":SUCCESS=" << status;
+    if(status) {
+        buf << ":VALUE=" << body;
+    } else {
+        buf << ":ERROR=" << body;
+    }
+    return buf.str();
 }
 
 
@@ -454,22 +474,32 @@ string InstructionListModel::execute(model_call_params_t &params)
     safe_vector<CoupledInstructionLine> couples;
     safe_vector<ConditionInstructionLine> conditionals;
 
+    stringstream error_results;
     while(getline(buf, line, '\n')) {
         s_map ref;
         BaseInstructionLine::deconstruct(line, ref);
 
-        key_required(ref, TYPE);
-        string type = ref[TYPE];
+        try {
+            key_required(ref, TYPE);
+            string type = ref[TYPE];
 
-
-        if(type == "VALUE") {
-            values.push_back(new ValueInstructionLine(ref));
-        } else if(type == "SINGLE") {
-            singles.push_back(new SingleInstructionLine(ref));
-        } else if(type == "COUPLE") {
-            couples.push_back(new CoupledInstructionLine(ref));
-        } else if(type == "CONDITION") {
-            conditionals.push_back(new ConditionInstructionLine(ref));
+            if(type == "VALUE") {
+                values.push_back(new ValueInstructionLine(ref));
+            } else if(type == "SINGLE") {
+                singles.push_back(new SingleInstructionLine(ref));
+            } else if(type == "COUPLE") {
+                couples.push_back(new CoupledInstructionLine(ref));
+            } else if(type == "CONDITION") {
+                conditionals.push_back(new ConditionInstructionLine(ref));
+            }
+        } catch(InteruptionHandling e) {
+            string id;
+            try {
+                id = ref.at("ID");
+            } catch(out_of_range e) {
+                id = "VOID";
+            }
+            error_results << resp_item(id, false, e) << endl;
         }
     }
 
@@ -482,9 +512,7 @@ string InstructionListModel::execute(model_call_params_t &params)
         try {
             res[item->name] = get_single(params, item);
         } catch(ScheduleSetupError er) {
-            stringstream buf;
-            buf << item->id << ": " << er.what();
-            throw InteruptionHandling(buf.str());
+            error_results << resp_item(item->id, false, er.what()) << endl;
         }
     }
 
@@ -494,9 +522,7 @@ string InstructionListModel::execute(model_call_params_t &params)
         try {
             res[item->name] = get_coupled(params, item);
         } catch(ScheduleSetupError er) {
-            stringstream buf;
-            buf << item->id << ": " << er.what();
-            throw InteruptionHandling(buf.str());
+            error_results << resp_item(item->id, false, er.what()) << endl;
         }
     }
 
@@ -507,9 +533,7 @@ string InstructionListModel::execute(model_call_params_t &params)
         try {
             res[item->name] = get_conditioned(params, item);
         } catch(ScheduleSetupError er) {
-            stringstream buf;
-            buf << item->id << ": " << er.what();
-            throw InteruptionHandling(buf.str());
+            error_results << resp_item(item->id, false, er.what()) << endl;
         }
     }
 
@@ -529,11 +553,9 @@ string InstructionListModel::execute(model_call_params_t &params)
         auto_ptr<Command> cmd(command_from_string(params, item->command));
         auto_ptr<Result> value(cmd->execute());
         if(dynamic_cast<ErrorResult*>(value.get())) {
-            result << "ID=" << item->id << ":SUCCESS=0:ERROR=" <<
-                value->value();
+            result << resp_item(item->id, false, value->value());
         } else {
-            result << "ID=" << item->id << ":SUCCESS=1:VALUE=" <<
-                value->value();
+            result << resp_item(item->id, true, value->value());
         }
         result << endl;
     }
