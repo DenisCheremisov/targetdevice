@@ -73,11 +73,16 @@ Devices::Devices(Drivers &drivers, const config_devices_t &conf) {
                 new device_reference_t(new DeviceSwitcher(drivers, sw));
             break;
         }
-        case DEVICE_THERMOSWITCHER:
-        case DEVICE_BOILER: {
+        case DEVICE_THERMOSWITCHER: {
             Thermoswitcher *trm = dynamic_cast<Thermoswitcher*>(it->second);
             (*this)[it->first] =
                 new device_reference_t(new DeviceTemperature(drivers, trm));
+            break;
+        }
+        case DEVICE_BOILER: {
+            Boiler *blr = dynamic_cast<Boiler*>(it->second);
+            (*this)[it->first] =
+                new device_reference_t(new DeviceBoiler(drivers, blr));
             break;
         }
         default:

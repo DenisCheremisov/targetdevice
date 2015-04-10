@@ -2,6 +2,34 @@
 #include "locker.hpp"
 
 
+SwitcherOn::SwitcherOn(device_reference_t *ref) {
+    device = dynamic_cast<DeviceSwitcher*>(ref->basepointer);
+    if(device == NULL) {
+        throw CommandSetupError(
+            "Attempt to set on an instance that is not a switcher");
+    }
+}
+
+
+SwitcherOff::SwitcherOff(device_reference_t *ref) {
+    device = dynamic_cast<DeviceSwitcher*>(ref->basepointer);
+    if(device == NULL) {
+        throw CommandSetupError(
+            "Attempt to set off an instance that is not a switcher");
+    }
+}
+
+
+TemperatureGet::TemperatureGet(device_reference_t *ref) {
+    device = dynamic_cast<DeviceTemperature*>(ref->basepointer);
+    if(device == NULL) {
+        throw CommandSetupError(
+            "Attempt to get a temperature with an "
+            "instance that is not a switcher");
+    }
+}
+
+
 Result *SwitcherOn::execute() throw() {
     try {
         Locker<DeviceSwitcher, TargetDeviceDriver> cover(device);
@@ -41,60 +69,6 @@ Result *SwitcherOff::execute() throw() {
 Result *TemperatureGet::execute() throw() {
     try {
         Locker<DeviceTemperature, TargetDeviceDriver> cover(device);
-        double res = cover->get_temperature();
-        return new FloatResult(res);
-    } catch(TargetDeviceInternalError error) {
-        return new ErrorResult(RESULT_SERIAL_ERROR,
-                               error.what());
-    } catch(TargetDeviceOperationError error) {
-        return new ErrorResult(RESULT_SERIAL_ERROR,
-                               error.what());
-    } catch(TargetDeviceValidationError error) {
-        return new ErrorResult(RESULT_SERIAL_ERROR,
-                               error.what());
-    }
-}
-
-
-Result *BoilerOn::execute() throw() {
-    try {
-        Locker<DeviceBoiler, TargetDeviceDriver> cover(device);
-        cover->turn_on();
-        return new IntResult(1);
-    } catch(TargetDeviceInternalError error) {
-        return new ErrorResult(RESULT_SERIAL_ERROR,
-                               error.what());
-    } catch(TargetDeviceOperationError error) {
-        return new ErrorResult(RESULT_SERIAL_ERROR,
-                               error.what());
-    } catch(TargetDeviceValidationError error) {
-        return new ErrorResult(RESULT_SERIAL_ERROR,
-                               error.what());
-    }
-}
-
-
-Result *BoilerOff::execute() throw() {
-    try {
-        Locker<DeviceBoiler, TargetDeviceDriver> cover(device);
-        cover->turn_off();
-        return new IntResult(1);
-    } catch(TargetDeviceInternalError error) {
-        return new ErrorResult(RESULT_SERIAL_ERROR,
-                               error.what());
-    } catch(TargetDeviceOperationError error) {
-        return new ErrorResult(RESULT_SERIAL_ERROR,
-                               error.what());
-    } catch(TargetDeviceValidationError error) {
-        return new ErrorResult(RESULT_SERIAL_ERROR,
-                               error.what());
-    }
-}
-
-
-Result *BoilerTemperatureGet::execute() throw() {
-    try {
-        Locker<DeviceBoiler, TargetDeviceDriver> cover(device);
         double res = cover->get_temperature();
         return new FloatResult(res);
     } catch(TargetDeviceInternalError error) {

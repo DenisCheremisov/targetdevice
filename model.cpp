@@ -323,8 +323,17 @@ Command *command_from_string(model_call_params_t &params, string cmd) {
     } else if(couple.second == "off") {
         return new SwitcherOff(params.devices->device(couple.first)->switcher);
     } else if(couple.second == "temperature") {
-        return new
-            TemperatureGet(params.devices->device(couple.first)->temperature);
+        switch(params.devices->device(couple.first)->type) {
+        case DEVICE_THERMOSWITCHER:
+            return new
+                TemperatureGet(
+                    params.devices->device(couple.first)->temperature);
+        case DEVICE_BOILER:
+            return new
+                TemperatureGet(params.devices->device(couple.first)->boiler);
+        default:
+            throw InteruptionHandling("That is not temperature device");
+        };
     } else {
         throw InteruptionHandling("That should not happen");
     }

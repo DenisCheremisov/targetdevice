@@ -41,43 +41,44 @@ BOOST_AUTO_TEST_CASE(test_driver_creation) {
 
     Result *r;
 
-    r = SwitcherOn(devices.device("switcher")->switcher).execute();
+    r = SwitcherOn(devices.device("switcher")).execute();
     BOOST_CHECK_EQUAL(r->value().c_str(), "1");
     delete r;
 
-    r = SwitcherOff(devices.device("switcher")->switcher).execute();
+    r = SwitcherOff(devices.device("switcher")).execute();
     BOOST_CHECK_EQUAL(r->value().c_str(), "1");
     delete r;
 
-    r = TemperatureGet(devices.device("temperature")->temperature).execute();
+    r = TemperatureGet(devices.device("temperature")).execute();
     BOOST_CHECK_EQUAL(atof(r->value().c_str()), 0);
     delete r;
 
-    r = TemperatureGet(devices.device("temperature")->temperature).execute();
+    r = TemperatureGet(devices.device("temperature")).execute();
     BOOST_CHECK(fabs(atof(r->value().c_str()) - 1./1023.*5.) < 1e-6);
     delete r;
 
-    r = TemperatureGet(devices.device("temperature")->temperature).execute();
+    r = TemperatureGet(devices.device("temperature")).execute();
     BOOST_CHECK(fabs(atof(r->value().c_str()) - 2./1023.*5.) < 1e-6);
     delete r;
 
-    r = BoilerOn(devices.device("boiler")->boiler).execute();
+    r = SwitcherOn(devices.device("boiler")).execute();
     BOOST_CHECK_EQUAL(r->value().c_str(), "1");
     delete r;
 
-    r = BoilerOff(devices.device("boiler")->boiler).execute();
+    r = SwitcherOff(devices.device("boiler")).execute();
     BOOST_CHECK_EQUAL(r->value().c_str(), "1");
     delete r;
 
-    r = BoilerTemperatureGet(devices.device("boiler")->boiler).execute();
-    BOOST_CHECK(fabs(atof(r->value().c_str()) - 0./1023.*5.) < 1e-6);
+
+    r = TemperatureGet(devices.device("boiler")).execute();
+    BOOST_CHECK_EQUAL(atof(r->value().c_str()), 0);
     delete r;
 
-    r = BoilerTemperatureGet(devices.device("boiler")->boiler).execute();
+    r = TemperatureGet(devices.device("boiler")).execute();
     BOOST_CHECK(fabs(atof(r->value().c_str()) - 1./1023.*5.) < 1e-6);
     delete r;
 
-    r = BoilerTemperatureGet(devices.device("boiler")->boiler).execute();
+    r = TemperatureGet(devices.device("boiler")).execute();
     BOOST_CHECK(fabs(atof(r->value().c_str()) - 2./1023.*5.) < 1e-6);
     delete r;
 }

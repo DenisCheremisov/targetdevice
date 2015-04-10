@@ -332,20 +332,20 @@ BOOST_AUTO_TEST_CASE(test_command_generation) {
         "ID=1:TYPE=value:COMMAND=switcher.on";
 
     auto_ptr<Command> cmd1(command_from_string(params, "switcher.on"));
-    BOOST_CHECK(hasEnding(typeid(*cmd1.get()).name(), "SwitcherOn"));
+    BOOST_CHECK(dynamic_cast<SwitcherOn*>(cmd1.get()) != NULL);
 
     auto_ptr<Command> cmd2(command_from_string(params, "switcher.off"));
-    BOOST_CHECK(hasEnding(typeid(*cmd2.get()).name(), "SwitcherOff"));
+    BOOST_CHECK(dynamic_cast<SwitcherOff*>(cmd2.get()) != NULL);
 
     auto_ptr<Command> cmd3(command_from_string(params,
                                                "temperature.temperature"));
-    BOOST_CHECK(hasEnding(typeid(*cmd3.get()).name(), "TemperatureGet"));
+    BOOST_CHECK(dynamic_cast<TemperatureGet*>(cmd3.get()) != NULL);
 
     auto_ptr<Command> cmd4(command_from_string(params, "boiler.on"));
-    BOOST_CHECK(hasEnding(typeid(*cmd4.get()).name(), "SwitcherOn"));
+    BOOST_CHECK(dynamic_cast<SwitcherOn*>(cmd4.get()) != NULL);
 
     auto_ptr<Command> cmd5(command_from_string(params, "boiler.off"));
-    BOOST_CHECK(hasEnding(typeid(*cmd5.get()).name(), "SwitcherOff"));
+    BOOST_CHECK(dynamic_cast<SwitcherOff*>(cmd5.get()) != NULL);
 
     BOOST_REQUIRE_THROW(
         auto_ptr<Command>(command_from_string(params, "boiler.of")),
@@ -487,17 +487,26 @@ BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
     params.sched = sched.get();
 
     string req =
-        "ID=0xffff:TYPE=VALUE:COMMAND=temperature.temperature\n"
+        "ID=0xfff0:TYPE=VALUE:COMMAND=temperature.temperature\n"
+        "ID=0xfff1:TYPE=VALUE:COMMAND=temperature.temperature\n"
+        "ID=0xfff2:TYPE=VALUE:COMMAND=boiler.temperature\n"
+        "ID=0xfff3:TYPE=VALUE:COMMAND=boiler.temperature\n"
         "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
         "ID=2:TYPE=COUPLE:NAME=2:COMMAND=boiler.on:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
         "ID=3:TYPE=CONDITION:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
+        ;
     stringstream buf;
     buf << time(NULL) + 4000;
     boost::replace_all(req, "replaceit", buf.str());
     params.request_data = req;
 
     InstructionListModel model;
-    BOOST_CHECK_EQUAL(model.execute(params), "ID=0xffff:SUCCESS=1:VALUE=0\n");
+    BOOST_CHECK_EQUAL(model.execute(params),
+                      "ID=0xfff0:SUCCESS=1:VALUE=0\n"
+                      "ID=0xfff1:SUCCESS=1:VALUE=0.00488759\n"
+                      "ID=0xfff2:SUCCESS=1:VALUE=0\n"
+                      "ID=0xfff3:SUCCESS=1:VALUE=0.00488759\n"
+                      );
 
     BOOST_CHECK_EQUAL(params.sched->size(), 3);
     BOOST_CHECK(dynamic_cast<SingleCommandSchedule*>((*params.sched)["1"])

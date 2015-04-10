@@ -19,13 +19,6 @@ public:
 class BaseDescrDevice {
 public:
     virtual ~BaseDescrDevice() throw() {};
-
-    virtual int get_relay_port() {
-        return -1;
-    }
-    virtual int get_adc_port() {
-        return -1;
-    }
 };
 
 
@@ -70,57 +63,18 @@ public:
     DeviceBoiler(Drivers &drivers,  Boiler *conf):
         DeviceSwitcher(drivers, conf),
         DeviceTemperature(drivers, conf) {};
-
-    int get_relay_port() {
-        int res = DeviceSwitcher::get_relay_port();
-        return res;
-    }
-
-    int get_adc_port() {
-        int res = DeviceTemperature::get_adc_port();
-        return res;
-    };
 };
 
 
 struct device_reference_t {
 public:
-    device_type_t type;
-    union {
-        BaseDescrDevice *basepointer;
-        DeviceSwitcher *switcher;
-        DeviceTemperature *temperature;
-        DeviceBoiler *boiler;
-    };
-    void (device_reference_t::*destructor) ();
-
-    void destruct_switcher() throw() { delete switcher; };
-    void destruct_temperature() throw() { delete temperature; };
-    void destruct_boiler() throw() { delete boiler; };
-    void destructor_void() throw() {};
-
-    device_reference_t():
-        type(DEVICE_UNDEFINED),
-        destructor(&device_reference_t::destructor_void) {};
-    device_reference_t(DeviceSwitcher *swt): type(DEVICE_SWITCHER),
-                                             switcher(swt),
-                                             destructor(&device_reference_t::destruct_switcher) {};
-    device_reference_t(DeviceTemperature *temp): type(DEVICE_THERMOSWITCHER),
-                                                 temperature(temp),
-                                                 destructor(&device_reference_t::destruct_temperature) {};
-    device_reference_t(DeviceBoiler *blr): type(DEVICE_BOILER),
-                                           boiler(blr),
-                                           destructor(&device_reference_t::destruct_boiler) {};
+    BaseDescrDevice *basepointer;
+    device_reference_t(BaseDescrDevice *swt): basepointer(swt) {};
 
     ~device_reference_t() throw() {
-        ((*this).*destructor)();
+        delete basepointer;
     }
 };
-
-
-#define DEVICE_FROM_REFERENCE(ref) \
-    (ref.type == DEVICE_BOILER)?ref.boiler: ( \
-    (ref.type == DEVICE_THERMOSWITCHER)?ref.temperature: ref.switcher)
 
 
 class Devices: public std::map<std::string, device_reference_t*> {

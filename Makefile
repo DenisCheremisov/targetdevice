@@ -1,4 +1,4 @@
-CPP=clang++-3.5
+CPP=clang++
 LDFLAGS=
 IFLAGS=
 OPTS=-g -O0
