@@ -124,7 +124,6 @@ class InstrResponseConnection: public BaseConnection {
 };
 
 
-
 template <class T>
 class TestController: public Controller {
 public:

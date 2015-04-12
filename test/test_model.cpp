@@ -516,3 +516,29 @@ BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
     BOOST_CHECK(dynamic_cast<ConditionedSchedule*>((*params.sched)["3"])
                 != NULL);
 }
+
+
+BOOST_AUTO_TEST_CASE(test_wrong_instruction_list_model) {
+    model_call_params_t params;
+    auto_ptr<NamedSchedule> sched(new NamedSchedule());
+    params.config = init.conf;
+    params.devices = init.devices;
+    params.sched = sched.get();
+
+    string req =
+        "ID=0xfff1:TYPE=VALUE:COMMAND=temperature.on\n"
+        "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
+        "ID=2:TYPE=COUPLE:NAME=2:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
+        "ID=3:TYPE=CONDITION:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
+
+    stringstream buf;
+    buf << time(NULL) + 4000;
+    boost::replace_all(req, "replaceit", buf.str());
+    params.request_data = req;
+
+    InstructionListModel model;
+    BOOST_CHECK_EQUAL(
+        model.execute(params),
+        "ID=0xfff1:SUCCESS=0:ERROR=Device \"temperature\" does not support operation \"on\"\n"
+        "ID=2:SUCCESS=0:ERROR=Key COMMAND required\n");
+}

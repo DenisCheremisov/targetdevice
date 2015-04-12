@@ -107,7 +107,7 @@ void key_required(s_map &src, string key) {
     s_map::iterator it = src.find(key);
     if(it == src.end()) {
         stringstream buf;
-        buf << "No key " << key << " found";
+        buf << "Key " << key << " required";
         throw InteruptionHandling(buf.str());
     }
 }
@@ -313,8 +313,8 @@ Command *command_from_string(model_call_params_t &params, string cmd) {
 
     if(!supported_commands.is_supported(it->second->id(), couple.second)) {
         stringstream buf;
-        buf << "Device " << couple.first << " does not support " <<
-            couple.second << " operation";
+        buf << "Device \"" << couple.first << "\" does not support operation \"" <<
+            couple.second << '"';
         throw InteruptionHandling(buf.str());
     }
 
@@ -550,15 +550,22 @@ string InstructionListModel::execute(model_call_params_t &params)
     for(safe_vector<ValueInstructionLine>::iterator it = values.begin();
         it != values.end(); it++) {
         ValueInstructionLine *item = *it;
-        auto_ptr<Command> cmd(command_from_string(params, item->command));
-        auto_ptr<Result> value(cmd->execute());
-        if(dynamic_cast<ErrorResult*>(value.get())) {
-            result << resp_item(item->id, false, value->value());
-        } else {
-            result << resp_item(item->id, true, value->value());
+        try {
+            auto_ptr<Command> cmd(command_from_string(params, item->command));
+            auto_ptr<Result> value(cmd->execute());
+            if(dynamic_cast<ErrorResult*>(value.get())) {
+                result << resp_item(item->id, false, value->value());
+            } else {
+                result << resp_item(item->id, true, value->value());
+            }
+        } catch(InteruptionHandling er) {
+            result << resp_item(item->id, false, er);
         }
-        result << endl;
+        result << "\n";
     }
 
-    return result.str();
+    stringstream result_buf;
+    result_buf << result.str();
+    result_buf << error_results.str();
+    return result_buf.str();
 }
