@@ -2,7 +2,7 @@
 #include "runtime.hpp"
 
 
-void background_worker(void *args) {
+void* background_worker(void *args) {
     BaseSchedule *sched = (BaseSchedule*)args;
 
     while(true) {

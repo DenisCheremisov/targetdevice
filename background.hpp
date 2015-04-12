@@ -10,6 +10,6 @@
 #include "locker.hpp"
 
 
-void background_worker(void *args);
+void* background_worker(void *args);
 
 #endif
