@@ -502,6 +502,9 @@ BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
 
     InstructionListModel model;
     BOOST_CHECK_EQUAL(model.execute(params),
+                      "ID=1:SUCCESS=1:VALUE=OK\n"
+                      "ID=2:SUCCESS=1:VALUE=OK\n"
+                      "ID=3:SUCCESS=1:VALUE=OK\n"
                       "ID=0xfff0:SUCCESS=1:VALUE=0\n"
                       "ID=0xfff1:SUCCESS=1:VALUE=0.00488759\n"
                       "ID=0xfff2:SUCCESS=1:VALUE=0\n"
@@ -539,6 +542,8 @@ BOOST_AUTO_TEST_CASE(test_wrong_instruction_list_model) {
     InstructionListModel model;
     BOOST_CHECK_EQUAL(
         model.execute(params),
+        "ID=1:SUCCESS=1:VALUE=OK\n"
+        "ID=3:SUCCESS=1:VALUE=OK\n"
         "ID=0xfff1:SUCCESS=0:ERROR=Device \"temperature\" does not support operation \"on\"\n"
         "ID=2:SUCCESS=0:ERROR=Key COMMAND required\n");
 }

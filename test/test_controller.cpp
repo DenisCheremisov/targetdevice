@@ -97,6 +97,9 @@ class InstrResponseConnection: public BaseConnection {
         }
         string test_sample =
             "SUCCESS=1\n"
+            "ID=1:SUCCESS=1:VALUE=OK\n"
+            "ID=2:SUCCESS=1:VALUE=OK\n"
+            "ID=3:SUCCESS=1:VALUE=OK\n"
             "ID=0xfff0:SUCCESS=1:VALUE=0\n"
             "ID=0xfff1:SUCCESS=1:VALUE=0.00488759\n"
             "ID=0xfff2:SUCCESS=1:VALUE=0\n"

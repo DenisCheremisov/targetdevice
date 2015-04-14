@@ -25,7 +25,8 @@ const char
     *COUPLING_INTERVAL = "COUPLING-INTERVAL",
     *RESTART = "RESTART",
     *CONDITION = "CONDITION",
-    *TYPE = "TYPE";
+    *TYPE = "TYPE",
+    *OK = "OK";
 
 
 string &rtrim(string &s) {
@@ -474,7 +475,7 @@ string InstructionListModel::execute(model_call_params_t &params)
     safe_vector<CoupledInstructionLine> couples;
     safe_vector<ConditionInstructionLine> conditionals;
 
-    stringstream error_results;
+    stringstream results, error_results;
     while(getline(buf, line, '\n')) {
         s_map ref;
         BaseInstructionLine::deconstruct(line, ref);
@@ -511,6 +512,7 @@ string InstructionListModel::execute(model_call_params_t &params)
         SingleInstructionLine *item = *it;
         try {
             res[item->name] = get_single(params, item);
+            results << resp_item(item->id, true, OK) << endl;
         } catch(ScheduleSetupError er) {
             error_results << resp_item(item->id, false, er.what()) << endl;
         }
@@ -521,6 +523,7 @@ string InstructionListModel::execute(model_call_params_t &params)
         CoupledInstructionLine *item = *it;
         try {
             res[item->name] = get_coupled(params, item);
+            results << resp_item(item->id, true, OK) << endl;
         } catch(ScheduleSetupError er) {
             error_results << resp_item(item->id, false, er.what()) << endl;
         }
@@ -532,6 +535,7 @@ string InstructionListModel::execute(model_call_params_t &params)
 
         try {
             res[item->name] = get_conditioned(params, item);
+            results << resp_item(item->id, true, OK) << endl;
         } catch(ScheduleSetupError er) {
             error_results << resp_item(item->id, false, er.what()) << endl;
         }
@@ -546,7 +550,6 @@ string InstructionListModel::execute(model_call_params_t &params)
         }
     }
 
-    stringstream result;
     for(safe_vector<ValueInstructionLine>::iterator it = values.begin();
         it != values.end(); it++) {
         ValueInstructionLine *item = *it;
@@ -554,18 +557,18 @@ string InstructionListModel::execute(model_call_params_t &params)
             auto_ptr<Command> cmd(command_from_string(params, item->command));
             auto_ptr<Result> value(cmd->execute());
             if(dynamic_cast<ErrorResult*>(value.get())) {
-                result << resp_item(item->id, false, value->value());
+                results << resp_item(item->id, false, value->value());
             } else {
-                result << resp_item(item->id, true, value->value());
+                results << resp_item(item->id, true, value->value());
             }
         } catch(InteruptionHandling er) {
-            result << resp_item(item->id, false, er);
+            results << resp_item(item->id, false, er);
         }
-        result << "\n";
+        results << endl;
     }
 
     stringstream result_buf;
-    result_buf << result.str();
+    result_buf << results.str();
     result_buf << error_results.str();
     return result_buf.str();
 }
