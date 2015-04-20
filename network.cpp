@@ -130,11 +130,14 @@ std::string Connection::receive() {
     std::stringstream buf;
 
     while(true) {
-        int received = SSL_read(ssl_handle, tmp, READ_SIZE - 1);
-        tmp[received] = '\0';
-
-        if(received > 0) {
+        int received = SSL_read(ssl_handle, tmp, READ_SIZE);
+        if(received < READ_SIZE) {
+            if(tmp[received - 1] != '\0') {
+                tmp[received] = '\0';
+            }
             buf << tmp;
+        } else {
+            buf << std::string(tmp, READ_SIZE);
         }
 
         if(received < READ_SIZE) {
@@ -147,6 +150,9 @@ std::string Connection::receive() {
 
 
 void Connection::send(std::string data) {
+    if(data.length() % 2 == 0) {
+        data += '\0';
+    }
     if(SSL_write(ssl_handle, data.c_str(), data.length()) != data.length()) {
         throw ConnectionError("Failed to send");
     }
