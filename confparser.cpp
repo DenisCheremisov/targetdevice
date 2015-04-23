@@ -281,12 +281,29 @@ public:
         return (int)converted;
     }
 
+    double extract_float(string data) {
+        char *p;
+        double converted = strtod(data.c_str(), &p);
+        bool fail_condition = *p;
+        if(fail_condition) {
+            stringstream buf;
+            buf << parent_name() << " must be a real number";
+            throw ParserError(data, buf.str());
+        }
+        return converted;
+    }
+
     int get_number(MapElement& mapping, ScalarElement parent, string key, int lower_bound, int upper_bound) {
         if(lower_bound > upper_bound) {
             throw ParserError(parent, "lower bound must not be greater than upper");
         }
         ScalarElement data = get_field(mapping, parent, key);
         return extract_number(data, lower_bound, upper_bound);
+    }
+
+    int get_double(MapElement &mapping, ScalarElement parent, string key) {
+        ScalarElement data = get_field(mapping, parent, key);
+        return extract_float(data);
     }
 
     ScalarElement get_string(MapElement& mapping, ScalarElement parent, string key, bool not_empty=false) {
@@ -415,14 +432,18 @@ Config *config_parse(MapElement *_rawconf) {
             deviceconf, device_parent, "type", true);
         if(device_type == BOILER_DESCRIPTOR) {
             map_getter.check_fields(deviceconf, device_parent,
-                "type,relay,temperature", "boiling device description");
+                "type,relay,temperature,factor,shift", "boiling device description");
             serial_link_t relay = scalar_getter.get_link(
                 deviceconf, device_parent, "relay", drvrs, relay_used,
                 RELAY_LOWER_BOUND, RELAY_UPPER_BOUND);
             serial_link_t temperature = scalar_getter.get_link(
                 deviceconf, device_parent, "temperature", drvrs, adc_used,
                 ADC_LOWER_BOUND, ADC_UPPER_BOUND);
-            (*dvcs)[device_parent] = new Boiler(relay, temperature);
+            double factor = scalar_getter.get_double(
+                deviceconf, device_parent, "factor");
+            double shift = scalar_getter.get_double(
+                deviceconf, device_parent, "shift");
+            (*dvcs)[device_parent] = new Boiler(relay, temperature, factor, shift);
         } else if(device_type == SWITCHER_DESCRIPTOR) {
             map_getter.check_fields(
                 deviceconf, device_parent, "type,relay",
@@ -433,7 +454,7 @@ Config *config_parse(MapElement *_rawconf) {
             (*dvcs)[device_parent] = new Switcher(relay);
         } else if(device_type == THERMALSWITCHER_DESCRIPTOR) {
             map_getter.check_fields(
-                deviceconf, device_parent, "type,relay,temperature",
+                deviceconf, device_parent, "type,relay,temperature,factor,shift",
                 "temperature measurement device description");
             serial_link_t relay = scalar_getter.get_link(
                 deviceconf, device_parent, "relay", drvrs, relay_used,
@@ -441,7 +462,11 @@ Config *config_parse(MapElement *_rawconf) {
             serial_link_t temperature = scalar_getter.get_link(
                 deviceconf, device_parent, "temperature", drvrs,  adc_used,
                 ADC_LOWER_BOUND, ADC_UPPER_BOUND);
-            (*dvcs)[device_parent] = new Thermoswitcher(temperature);
+            double factor = scalar_getter.get_double(
+                deviceconf, device_parent, "factor");
+            double shift = scalar_getter.get_double(
+                deviceconf, device_parent, "shift");
+            (*dvcs)[device_parent] = new Thermoswitcher(temperature, factor, shift);
         } else {
             throw ParserError(device_type, device_type + " not supported");
         }

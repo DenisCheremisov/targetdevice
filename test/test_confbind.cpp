@@ -38,7 +38,13 @@ BOOST_AUTO_TEST_CASE(test_driver_creation) {
     drivers.serial("targetdevice");
 
     Devices devices(drivers, conf->devices());
-    BOOST_CHECK_EQUAL(devices.device("switcher")->type, DEVICE_SWITCHER);
-    BOOST_CHECK_EQUAL(devices.device("temperature")->type, DEVICE_THERMOSWITCHER);
-    BOOST_CHECK_EQUAL(devices.device("boiler")->type, DEVICE_BOILER);
+    BOOST_CHECK(dynamic_cast<DeviceBoiler*>(
+                    devices.device("boiler")->basepointer) !=
+                NULL);
+    BOOST_CHECK(dynamic_cast<DeviceSwitcher*>(
+                    devices.device("switcher")->basepointer) !=
+                NULL);
+    BOOST_CHECK(dynamic_cast<DeviceTemperature*>(
+                    devices.device("temperature")->basepointer) !=
+                NULL);
 }

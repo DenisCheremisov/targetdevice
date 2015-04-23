@@ -10,7 +10,7 @@
 #include "../confparser.hpp"
 
 const char *YAML_TEST_FILE = "conf/test.yaml";
-const char *CONF_TEST_FILE = "conf/targetdevice.yaml";
+const char *CONF_TEST_FILE = "conf/test_targetdevice.yaml";
 
 using namespace std;
 
@@ -122,6 +122,8 @@ BOOST_AUTO_TEST_CASE(test_conf_parsing) {
     BOOST_CHECK_EQUAL(pboiler->relay().port, 1);
     BOOST_CHECK_EQUAL(pboiler->temperature().driver, "targetdevice");
     BOOST_CHECK_EQUAL(pboiler->temperature().port, 2);
+    BOOST_CHECK_EQUAL(pboiler->factor(), 5);
+    BOOST_CHECK_EQUAL(pboiler->shift(), 6);
     Switcher *pswitcher = dynamic_cast<Switcher*>(conf->devices().at("switcher"));
     BOOST_CHECK(pswitcher != (Switcher*)NULL);
     BOOST_CHECK_EQUAL(pswitcher->relay().driver, "targetdevice");
@@ -130,6 +132,8 @@ BOOST_AUTO_TEST_CASE(test_conf_parsing) {
     BOOST_CHECK(ptermo != (Thermoswitcher*)NULL);
     BOOST_CHECK_EQUAL(ptermo->temperature().driver, "targetdevice");
     BOOST_CHECK_EQUAL(ptermo->temperature().port, 1);
+    BOOST_CHECK_EQUAL(ptermo->factor(), 12);
+    BOOST_CHECK_EQUAL(ptermo->shift(), 13);
 
     delete res;
 }

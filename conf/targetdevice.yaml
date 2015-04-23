@@ -17,6 +17,8 @@ devices:
     type: boiler
     relay: targetdevice.1
     temperature: targetdevice.2
+    factor: 1
+    shift: 0
 
   switcher:
     type: switcher
@@ -26,3 +28,5 @@ devices:
     type: thermalswitcher
     relay: targetdevice.4
     temperature: targetdevice.1
+    factor: 1
+    shift: 0

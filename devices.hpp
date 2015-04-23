@@ -54,9 +54,12 @@ public:
 class Thermoswitcher: public virtual BaseDevice {
 private:
     serial_link_t _temperature;
+    double _factor;
+    double _shift;
 
 public:
-    Thermoswitcher(serial_link_t temp): _temperature(temp) {};
+    Thermoswitcher(serial_link_t temp, double factor, double shift):
+        _temperature(temp), _factor(factor), _shift(shift) {};
 
     device_type_t id() const throw() {
         return DEVICE_THERMOSWITCHER;
@@ -67,12 +70,21 @@ public:
     const serial_link_t& temperature() const throw() {
         return _temperature;
     }
+
+    double factor() {
+        return _factor;
+    }
+
+    double shift() {
+        return _shift;
+    }
 };
 
 
 class Boiler: public Switcher, public Thermoswitcher {
 public:
-    Boiler(serial_link_t rel, serial_link_t temp): Switcher(rel), Thermoswitcher(temp) {};
+    Boiler(serial_link_t rel, serial_link_t temp, double factor, double shift):
+        Switcher(rel), Thermoswitcher(temp, factor, shift) {};
 
     device_type_t id() const throw() {
         return DEVICE_BOILER;

@@ -46,12 +46,14 @@ void DeviceSwitcher::turn_off() {
 DeviceTemperature::DeviceTemperature(Drivers &drivers, Thermoswitcher *conf) {
     this->temperature_device = drivers.serial(conf->temperature().driver);
     this->adc_port = conf->temperature().port;
+    this->factor = conf->factor();
+    this->shift = conf->shift();
 }
 
 
 double DeviceTemperature::get_temperature() {
     int value = temperature_device->adc_get(this->get_adc_port());
-    return value/1023.*5.;
+    return factor*value/1023.*5. + shift;
 }
 
 

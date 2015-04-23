@@ -44,6 +44,7 @@ class DeviceTemperature: virtual public BaseDescrDevice {
 protected:
     TargetDeviceDriver *temperature_device;
     int adc_port;
+    float factor, shift;
 
 public:
     ~DeviceTemperature() throw() {};
