@@ -29,10 +29,12 @@ const char
     *OK = "OK";
 
 
-string &rtrim(string &s) {
-    s.erase(find_if(s.rbegin(), s.rend(),
-                    not1(ptr_fun<int, int>(isspace))).base(), s.end());
-    return s;
+string rtrim(string s) {
+    size_t i = s.length();
+    while(i > 0 && (s[i] == ' ' || s[i] == '\n')) {
+        i--;
+    }
+    return string(s, i);
 }
 
 

@@ -38,7 +38,7 @@ public:
 
     ModelMap() {
         (*this)["CONFIG"] = new ConfigInfoModel;
-        (*this)["INSTRUCTION"] = new InstructionListModel;
+        (*this)["INSTRUCTIONS"] = new InstructionListModel;
     }
 };
 

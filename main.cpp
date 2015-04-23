@@ -2,14 +2,16 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
-#include <bsd/libutil.h>
 #include <sys/syslog.h>
-#include <pthread.h>
 #include <err.h>
-
 #include <string>
 #include <exception>
 #include <memory>
+
+#include <pthread.h>
+
+#include <bsd/libutil.h>
+#include <openssl/ssl.h>
 
 #include "confparser.hpp"
 #include "confbind.hpp"
@@ -56,6 +58,8 @@ public:
                 ; // Do nothing, we are just setting them all off wherever possible
             }
         }
+
+        SSL_library_init();
     };
 
     ~GlobalDataInitializer() throw() {
@@ -136,11 +140,15 @@ int main(int argc, char **argv) {
 
     // Do work
     pthread_t thread;
-    pthread_create(&thread, NULL, background_worker, &(init->sched));
+    pthread_create(&thread, NULL, background_worker, init->sched);
 
     Controller controller(init->conf, init->devices, init->sched);
     while(true) {
-        controller.execute();
+        try {
+            controller.execute();
+        } catch(ConnectionError &e) {
+            cout << "Cannot connect: " << e.what() << endl;
+        }
         sleep(120);
     }
 

@@ -109,7 +109,7 @@ class InstrResponseConnection: public BaseConnection {
 
     string receive() {
         string value =
-            "INSTRUCTION\n"
+            "INSTRUCTIONS\n"
             "ID=0xfff0:TYPE=VALUE:COMMAND=temperature.temperature\n"
             "ID=0xfff1:TYPE=VALUE:COMMAND=temperature.temperature\n"
             "ID=0xfff2:TYPE=VALUE:COMMAND=boiler.temperature\n"

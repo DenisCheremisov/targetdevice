@@ -1,9 +1,11 @@
+#include <iostream>
+
 #include "background.hpp"
 #include "runtime.hpp"
 
 
 void* background_worker(void *args) {
-    BaseSchedule *sched = (BaseSchedule*)args;
+    NamedSchedule *sched = reinterpret_cast<NamedSchedule*>(args);
 
     while(true) {
         Commands *commands;
