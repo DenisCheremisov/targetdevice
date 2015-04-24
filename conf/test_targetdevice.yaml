@@ -1,0 +1,32 @@
+daemon:
+  logfile: targetdevice.log
+  pidfile: targetdevice.pid
+
+connection:
+  host: localhost
+  port: 10023
+  identity: client_001
+
+drivers:
+  targetdevice:
+    type: serial
+    path: /dev/pts/19
+
+devices:
+  boiler:
+    type: boiler
+    relay: targetdevice.1
+    temperature: targetdevice.2
+    factor: 5
+    shift: 6
+
+  switcher:
+    type: switcher
+    relay: targetdevice.2
+
+  temperature:
+    type: thermalswitcher
+    relay: targetdevice.4
+    temperature: targetdevice.1
+    factor: 12
+    shift: 13
