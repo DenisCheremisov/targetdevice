@@ -35,7 +35,7 @@ private:
 public:
     ErrorResult(error_result_t err_code,
                 std::string msg):
-        error_code(err_code), message(msg) {};
+        message(msg), error_code(err_code) {};
     virtual ~ErrorResult() throw() {};
 
     std::string value() throw() {

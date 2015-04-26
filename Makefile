@@ -1,7 +1,7 @@
-CPP=clang++
+CPP=g++
 LDFLAGS=
 IFLAGS=
-OPTS=-g -O0
+OPTS=-g -O0 -Wall -Werror -pedantic
 COMPILE=$(CPP) $(LDFLAGS) $(IFLAGS) $(OPTS)
 TESTFLAGS=-lboost_unit_test_framework
 

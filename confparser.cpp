@@ -85,7 +85,6 @@ public:
 
 ParsedElement *parse_all_config(Parser &parser) {
     Event event;
-    ParsedElement *value;
     MapElement *result;
 
     event.proceed(parser);
@@ -354,7 +353,6 @@ ScalarGetter scalar_getter("scalar", "mapping");
 
 
 Config *config_parse(MapElement *_rawconf) {
-    Config *cfg;
     MapElement &rawconf = *_rawconf;
 
     map_getter.check_fields(rawconf, "root", "connection,daemon,drivers,devices");

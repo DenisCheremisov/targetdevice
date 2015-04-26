@@ -115,7 +115,7 @@ void TargetDeviceDriver::port_talk(string request, string &response) {
 
     ssize_t count;
     count = write(fd, request.c_str(), len);
-    if(count < len) {
+    if(count < (int)len) {
         throw TargetDeviceInternalError(request);
     }
     char response_buf[256];

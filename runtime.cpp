@@ -98,7 +98,6 @@ NamedSchedule& NamedSchedule::set_schedule(string name, BaseSchedule *sched) {
 
 
 bool NamedSchedule::is_expired() {
-    NamedSchedule::iterator it = this->begin();
     int not_expired_counter = 0;
 
     for(NamedSchedule::iterator it = this->begin();

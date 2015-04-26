@@ -72,7 +72,7 @@ public:
 
 
 int main(int argc, char **argv) {
-    char *config_file_name, *pidfile, *data;
+    char *config_file_name;
     pid_t otherpid, childpid;
     struct pidfh *pfh;
 
@@ -100,7 +100,8 @@ int main(int argc, char **argv) {
                 config_file_name?config_file_name:CONFIG_FILE_NAME));
         init = _init;
     } catch(exception &err) {
-        errx(EXIT_FAILURE, err.what());
+        cerr << err.what();
+        exit(EXIT_FAILURE);
     }
 
     if(daemonize) {
@@ -108,8 +109,8 @@ int main(int argc, char **argv) {
         pfh = pidfile_open(pidfile, 0600, &otherpid);
         if(pfh == NULL) {
             if(errno == EEXIST) {
-                errx(EXIT_FAILURE, "Daemon already running, pidf: %jd.",
-                     (intmax_t)otherpid);
+                errx(EXIT_FAILURE, "Daemon already running, pidf: %d.",
+                     (int)otherpid);
             }
             warn("Cannot open or create pidfile");
         }
@@ -132,7 +133,7 @@ int main(int argc, char **argv) {
             pidfile_write(pfh);
             break;
         default:
-            syslog(LOG_INFO, "Child %jd started.", (intmax_t)childpid);
+            syslog(LOG_INFO, "Child %d started.", (int)childpid);
             return 0;
             break;
         }

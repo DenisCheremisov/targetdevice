@@ -153,7 +153,7 @@ void Connection::send(std::string data) {
     if(data.length() % 2 == 0) {
         data += '\0';
     }
-    if(SSL_write(ssl_handle, data.c_str(), data.length()) != data.length()) {
+    if(SSL_write(ssl_handle, data.c_str(), data.length()) != (int)data.length()) {
         throw ConnectionError("Failed to send");
     }
 }
