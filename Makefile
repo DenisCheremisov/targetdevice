@@ -38,6 +38,9 @@ controller.o: controller.cpp controller.hpp
 clean:
 	rm *.o test_*
 
+prepare:
+	cp *.hpp *.cpp openwrt/src/
+
 test_targetdevice: targetdevice.o test/test_targetdevice.cpp
 	$(COMPILE) -o test_targetdevice targetdevice.o test/test_targetdevice.cpp $(TESTFLAGS)
 
