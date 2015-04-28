@@ -1,4 +1,4 @@
-CPP=g++
+CPP=clang++
 LDFLAGS=
 IFLAGS=
 OPTS=-g -O0 -Wall -Werror -pedantic
@@ -6,7 +6,7 @@ COMPILE=$(CPP) $(LDFLAGS) $(IFLAGS) $(OPTS)
 TESTFLAGS=-lboost_unit_test_framework
 
 all: main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o
-	$(COMPILE) -o tdevice main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o $(TESTFLAGS) -lyaml -lssl -lcrypto -lpthread -lbsd
+	$(COMPILE) -o tdevice main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o $(TESTFLAGS) -lyaml -lssl -lcrypto -lpthread
 
 targetdevice.o: targetdevice.cpp targetdevice.hpp
 	$(COMPILE) -c targetdevice.cpp
