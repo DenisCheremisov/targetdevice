@@ -8,7 +8,9 @@
 #include <iostream>
 #include <ctime>
 
+extern "C" {
 #include <yaml.h>
+}
 
 
 #include "drivers.hpp"

@@ -113,7 +113,10 @@ public:
             file >> buf;
             throw PidfileLockError(buf);
         }
-        pwrite(fd, "-1", 2, 0);
+        status = pwrite(fd, "-1", 2, 0);
+        if(status < 0) {
+            throw PidfileLockError(status);
+        }
 
         return new PidfileOperator(fd);
     }
@@ -128,7 +131,10 @@ public:
         std::stringstream buf;
         buf << pid;
         std::string data = buf.str();
-        pwrite(fd, data.c_str(), data.size(), 0);
+        int status = pwrite(fd, data.c_str(), data.size(), 0);
+        if(status < 0) {
+            ;
+        }
     }
 };
 

@@ -20,4 +20,6 @@ void* background_worker(void *args) {
 
         sleep(RUNTIME_WAKE_PAUSE);
     }
+
+    return NULL;
 }

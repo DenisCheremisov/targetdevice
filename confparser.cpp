@@ -479,7 +479,7 @@ FILE *open_conf_fp(const char *name) {
     FILE *res = fopen(name, "r");
     if(res != NULL) {
         struct stat attrib;
-        fstat(res->_fileno, &attrib);
+        fstat(fileno(res), &attrib);
         Config::conf_change = attrib.st_mtim.tv_sec;
     }
     return res;

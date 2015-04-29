@@ -1,10 +1,9 @@
 CFLAGS?=-O2
 CFLAGS+=
-WFLAGS:=-Wall -Werror -pedantic
-LDFLAGS?=-lyaml -lssl -lcrypto -lpthread -lbsd
+WFLAGS:=-Wall -Werror -pedantic -Wl,--verbose
 BINARY:=tdevice
 
-COMPILE=$(CC) $(CFLAGS) $(WFLAGS)
+COMPILE=$(CXX) $(CFLAGS) $(WFLAGS)
 
 all: $(BINARY)
 
@@ -36,7 +35,7 @@ controller.o: controller.cpp controller.hpp
 	$(COMPILE) -c controller.cpp
 
 $(BINARY): main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o
-	$(CPP) $(CFLAGS) $(LDFLAGS) $(WFLAGS) -o $(BINARY) main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o
+	$(CXX) $(CFLAGS) $(LDFLAGS) $(WFLAGS) -o $(BINARY) main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o -lyaml -lssl -lcrypto -lpthread
 
 clean:
 	rm -f $(BINARY) *.o
