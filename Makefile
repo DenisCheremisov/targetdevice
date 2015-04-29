@@ -1,4 +1,4 @@
-CPP=clang++
+CPP=g++
 LDFLAGS=
 IFLAGS=
 OPTS=-g -O0 -Wall -Werror -pedantic
@@ -35,8 +35,11 @@ network.o: network.cpp network.hpp
 controller.o: controller.cpp controller.hpp
 	$(COMPILE) -c controller.cpp
 
+yamlparser.o: yamlparser.cpp yamlparser.hpp
+	$(COMPILE) -c yamlparser.cpp
+
 clean:
-	rm *.o test_*
+	rm -f *.o test_*
 
 prepare:
 	cp *.hpp *.cpp openwrt/src/
@@ -64,3 +67,6 @@ test_network: network.o test/test_network.cpp
 
 test_controller: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o test/test_controller.cpp
 	$(COMPILE) -o test_controller runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o test/test_controller.cpp $(TESTFLAGS) -lyaml -lssl -lcrypto
+
+test_yamlparser: test/test_yamlparser.cpp yamlparser.hpp
+	$(COMPILE) -o test_yamlparser test/test_yamlparser.cpp $(TESTFLAGS) -lyaml
