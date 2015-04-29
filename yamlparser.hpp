@@ -250,7 +250,7 @@ public:
             if(!fail) {
                 set_finish(data);
                 null = false;
-                value = (int)converted;
+                value = converted;
             }
         }
         if(fail) {
@@ -357,7 +357,15 @@ public:
         if(required_elements.size() > 0) {
             std::stringstream buf;
             int i = 0;
-            buf << "Required fields ";
+            std::string name, verb;
+            if(required_elements.size() == 1) {
+                name = "field";
+                verb = "is";
+            } else {
+                name = "fields";
+                verb = "are";
+            }
+            buf << "Required " << name << " ";
             for(std::set<std::string>::iterator it = required_elements.begin();
                 it != required_elements.end(); it++) {
                 if(i > 0) {
@@ -366,9 +374,9 @@ public:
                 } else {
                     i++;
                 }
-                buf << *it;
+                buf << "`" << *it << "`";
             }
-            buf << " are not defined";
+            buf << " " << verb << " not defined";
             throw YamlBaseError(buf.str().c_str());
         }
         return this;
