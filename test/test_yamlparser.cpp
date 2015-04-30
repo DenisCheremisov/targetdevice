@@ -49,23 +49,20 @@ BOOST_AUTO_TEST_CASE(test_rollback) {
         std::auto_ptr<YamlParser> parser(YamlParser::get(
             reinterpret_cast<const unsigned char*>(test_yaml.c_str()),
             test_yaml.size()));
-        std::auto_ptr<YamlEvent> ev1(parser->get_event());
-        std::auto_ptr<YamlEvent> ev2(parser->get_event());
+        YamlEvent *ev1 = parser->get_event();
+        YamlEvent *ev2 = parser->get_event();
         BOOST_CHECK(ev1->type != ev2->type);
     }
     {
-        std::auto_ptr<YamlParser> parser(YamlParser::get(
-            reinterpret_cast<const unsigned char*>(test_yaml.c_str()),
-            test_yaml.size()));
-        yaml_parser_t *copy = parser->store();
-        std::auto_ptr<YamlEvent> ev1(parser->get_event());
-        std::auto_ptr<YamlEvent> _1(parser->get_event());
-        std::auto_ptr<YamlEvent> _2(parser->get_event());
-        std::auto_ptr<YamlEvent> _3(parser->get_event());
-        std::auto_ptr<YamlEvent> _4(parser->get_event());
-        std::auto_ptr<YamlEvent> _5(parser->get_event());
-        parser->restore(copy);
-        std::auto_ptr<YamlEvent> ev2(parser->get_event());
+        std::auto_ptr<YamlParser> parser(YamlParser::get(test_yaml));
+        YamlParser prsr(*parser);
+        YamlEvent *ev1 = prsr.get_event();
+        prsr.get_event();
+        prsr.get_event();
+        prsr.get_event();
+        prsr.get_event();
+        prsr.get_event();
+        YamlEvent *ev2 = parser->get_event();
         BOOST_CHECK_EQUAL(ev1->type, ev2->type);
     }
 }
@@ -84,10 +81,6 @@ BOOST_AUTO_TEST_CASE(test_variative) {
     BaseStruct *res = yaml_parse(parser.get(), &strct);
     BOOST_CHECK(dynamic_cast<tmptype*>(res) != NULL);
     BOOST_CHECK_EQUAL(strct.size(), 3);
-    BOOST_CHECK(dynamic_cast<IntegerStruct*>(strct.at("a")) != NULL);
-    BOOST_CHECK(dynamic_cast<FloatStruct*>(strct.at("b")) != NULL);
-    BOOST_CHECK(dynamic_cast<StringStruct*>(strct.at("c")) != NULL);
-
     BOOST_CHECK_EQUAL(dynamic_cast<IntegerStruct*>(strct.at("a"))->value, 1);
     BOOST_CHECK_EQUAL(dynamic_cast<FloatStruct*>(strct.at("b"))->value, 2.0);
     BOOST_CHECK_EQUAL(dynamic_cast<StringStruct*>(strct.at("c"))->value,

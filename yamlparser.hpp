@@ -5,6 +5,7 @@
 
 #include <set>
 #include <map>
+#include <list>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -64,6 +65,19 @@ public:
 
 };
 
+
+class YamlEvent: public yaml_event_t {
+    YamlEvent() {};
+
+public:
+    ~YamlEvent() throw() {
+        yaml_event_delete(this);
+    }
+
+    friend class YamlParser;
+};
+
+
 std::ostream& operator<<(std::ostream& buf, const ScalarElement& data) {
     buf << (std::string)data << " (" << data.start_pos().first << "," <<
         data.start_pos().second << " - " <<
@@ -74,12 +88,12 @@ std::ostream& operator<<(std::ostream& buf, const ScalarElement& data) {
 
 class YamlParserError: public YamlBaseError {
 public:
-    YamlParserError(yaml_event_t *event, const char *message) {
+    YamlParserError(YamlEvent *event, const char *message) {
         std::stringstream buf;
         buf << "Error at (" << event->start_mark.line + 1 << "," <<
             event->start_mark.column << ")-(" << event->end_mark.line + 1 <<
             "," << event->end_mark.column << "): " << message;
-
+        delete event;
         assign(buf.str());
     }
 
@@ -97,7 +111,7 @@ public:
 
 class YamlStructureError: public YamlParserError {
 public:
-    YamlStructureError(yaml_event_t *event, const char *message):
+    YamlStructureError(YamlEvent *event, const char *message):
         YamlParserError(event, message) {}
 
     YamlStructureError(const ScalarElement &token, std::string message):
@@ -105,41 +119,47 @@ public:
 };
 
 
-class YamlEvent: public yaml_event_t {
-    YamlEvent() {};
-
-public:
-    ~YamlEvent() throw() {
-        yaml_event_delete(this);
-    }
-    void match(yaml_event_type_e type_name, std::string message) {
-        if(type != type_name) {
-            throw YamlParserError(this, message);
-        }
-    }
-
-    friend class YamlParser;
-};
-
-
-class YamlParser: public yaml_parser_t {
+class YamlParser {
 private:
-    YamlParser() {
-        if(!yaml_parser_initialize(this)) {
+    bool master;
+    yaml_parser_t *parser;
+    bool just_started;
+    std::list<YamlEvent*> *event_list;
+    std::list<YamlEvent*>::iterator event_it;
+
+    YamlParser(): master(true) {
+        parser = new yaml_parser_t;
+        event_list = new std::list<YamlEvent*>;
+        event_it = event_list->begin();
+        just_started = true;
+
+        if(!yaml_parser_initialize(parser)) {
             throw YamlBaseError("Cannot initialize parser");
         }
     }
 
 public:
+    YamlParser(const YamlParser &prsr) {
+        master = false;
+        parser = prsr.parser;
+        just_started = prsr.just_started;
+        event_list = prsr.event_list;
+        event_it = prsr.event_it;
+    }
+
+    void confirm(const YamlParser &prsr) {
+        event_it = prsr.event_it;
+    }
+
     static YamlParser *get(FILE *fp) {
         YamlParser *res = new YamlParser;
-        yaml_parser_set_input_file(res, fp);
+        yaml_parser_set_input_file(res->parser, fp);
         return res;
     }
 
     static YamlParser *get(const unsigned char *input, size_t size) {
         YamlParser *res = new YamlParser;
-        yaml_parser_set_input_string(res, input, size);
+        yaml_parser_set_input_string(res->parser, input, size);
         return res;
     }
 
@@ -148,27 +168,34 @@ public:
                    source.size());
     }
 
-    ~YamlParser() throw() {
-        yaml_parser_delete(this);
+    virtual ~YamlParser() throw() {
+        if(master) {
+            yaml_parser_delete(parser);
+            delete parser;
+
+            for(std::list<YamlEvent*>::iterator it = event_list->begin();
+                it != event_list->end(); it++) {
+                delete *it;
+            }
+            delete event_list;
+        }
     }
 
     YamlEvent *get_event() {
-        std::auto_ptr<YamlEvent> event(new YamlEvent);
-        if(!yaml_parser_parse(this, event.get())) {
-            throw YamlParserError(event.get(), "parsing error after this token");
+        if(++event_it == event_list->end()) {
+            YamlEvent *event = new YamlEvent;
+            if(!yaml_parser_parse(parser, event)) {
+                throw YamlParserError(event, "parsing error after this token");
+            }
+            event_list->push_back(event);
+            event_it = event_list->end();
+            --event_it;
         }
-        return event.release();
-    }
-
-    yaml_parser_t* store() {
-        yaml_parser_t *res = new yaml_parser_t;
-        *res = *this;
-        return res;
-    }
-
-    void restore(yaml_parser_t* copy) {
-        *reinterpret_cast<yaml_parser_t*>(this) = *copy;
-        delete copy;
+        if(just_started) {
+            event_it = event_list->begin();
+            just_started = false;
+        }
+        return *(event_it);
     }
 };
 
@@ -200,13 +227,13 @@ public:
     ~IntegerStruct() throw() {};
 
     BaseStruct *build(YamlParser *parser) {
-        std::auto_ptr<YamlEvent> event(parser->get_event());
+        YamlEvent *event = parser->get_event();
         bool fail = false;
         if(event->type != YAML_SCALAR_EVENT) {
             fail = true;
         }
         if(!fail) {
-            ScalarElement data(event.get());
+            ScalarElement data(event);
             char *p;
             long converted = strtol(data.c_str(), &p, 10);
             fail = *p;
@@ -220,7 +247,7 @@ public:
             std::stringstream buf;
             buf << "Wrong format for " << start <<
                 " - must be an integer number";
-            throw YamlStructureError(event.get(), buf.str());
+            throw YamlStructureError(event, buf.str());
         }
         return this;
     }
@@ -237,13 +264,13 @@ public:
     ~FloatStruct() throw() {};
 
     BaseStruct *build(YamlParser *parser) {
-        std::auto_ptr<YamlEvent> event(parser->get_event());
+        YamlEvent *event = parser->get_event();
         bool fail = false;
         if(event->type != YAML_SCALAR_EVENT) {
             fail = true;
         }
         if(!fail) {
-            ScalarElement data(event.get());
+            ScalarElement data(event);
             char *p;
             double converted = strtod(data.c_str(), &p);
             fail = *p;
@@ -257,7 +284,7 @@ public:
             std::stringstream buf;
             buf << "Wrong format for " << start <<
                 " - must be a floating number";
-            throw YamlStructureError(event.get(), buf.str());
+            throw YamlStructureError(event, buf.str());
         }
         return this;
     }
@@ -274,13 +301,13 @@ public:
     ~StringStruct() throw() {};
 
     BaseStruct *build(YamlParser *parser) {
-        std::auto_ptr<YamlEvent> event(parser->get_event());
+        YamlEvent *event = parser->get_event();
         if(event->type != YAML_SCALAR_EVENT) {
             std::stringstream buf;
             buf << "Wrong format for " << start << " - must be a text";
-            throw YamlStructureError(event.get(), buf.str());
+            throw YamlStructureError(event, buf.str());
         }
-        ScalarElement data(event.get());
+        ScalarElement data(event);
         set_finish(data);
         null = false;
         value.assign(data);
@@ -310,11 +337,11 @@ public:
     }
 
     BaseStruct *build(YamlParser *parser) {
-        std::auto_ptr<YamlEvent> event(parser->get_event());
+        YamlEvent *event = parser->get_event();
         if(event->type != YAML_MAPPING_START_EVENT) {
             std::stringstream buf;
             buf << "Wrong node for " << start << " - must a mapping";
-            throw YamlStructureError(event.get(), buf.str());
+            throw YamlStructureError(event, buf.str());
         }
 
         std::set<std::string> required_elements;
@@ -327,11 +354,11 @@ public:
         str2struct::iterator req, opt;
         std::set<ScalarElement>::iterator used;
         while(true) {
-            std::auto_ptr<YamlEvent> event(parser->get_event());
+            YamlEvent *event = parser->get_event();
             if(event->type == YAML_MAPPING_END_EVENT) {
                 break;
             }
-            ScalarElement header(event.get());
+            ScalarElement header(event);
             BaseStruct *strct = NULL;
             used = used_elements.find(header);
             if(used != used_elements.end()) {
@@ -392,16 +419,15 @@ class ChoiceStruct: public BaseStruct {
 public:
     BaseStruct *build(YamlParser *parser) {
         std::auto_ptr<F> res(new F);
-        std::auto_ptr<yaml_parser_t> copy(parser->store());
+        YamlParser prsr(*parser);
         try {
-            BaseStruct *r = res->build(parser);
+            BaseStruct *r = res->build(&prsr);
             if(r == res.get()) {
                 res.release();
             }
+            parser->confirm(prsr);
             return r;
         } catch(YamlBaseError e) {
-            parser->restore(copy.get());
-            copy.release();
             std::auto_ptr<S> res(new S);
             BaseStruct *r = res->build(parser);
             if(r == res.get()) {
@@ -427,18 +453,18 @@ public:
     }
 
     BaseStruct *build(YamlParser *parser) {
-        std::auto_ptr<YamlEvent> event(parser->get_event());
+        YamlEvent *event = parser->get_event();
         if(event->type != YAML_MAPPING_START_EVENT) {
-            throw YamlStructureError(event.get(), "Must be a mapping here");
+            throw YamlStructureError(event, "Must be a mapping here");
         }
-        while(event = std::auto_ptr<YamlEvent>(parser->get_event()),
+        while(event = parser->get_event(),
               event->type != YAML_MAPPING_END_EVENT) {
             std::auto_ptr<T> res(new T);
             BaseStruct *r = res->build(parser);
             if(r == res.get()) {
                 res.release();
             }
-            ScalarElement header(event.get());
+            ScalarElement header(event);
             r->set_start(header);
             (*this)[header] = r;
         }
@@ -450,7 +476,7 @@ public:
 BaseStruct *yaml_parse(YamlParser *parser, BaseStruct *strct) {
     BaseStruct *res;
     while(true) {
-        std::auto_ptr<YamlEvent> event(parser->get_event());
+        YamlEvent *event = parser->get_event();
         switch(event->type) {
         case YAML_NO_EVENT: break;
         case YAML_STREAM_START_EVENT: break;
@@ -464,7 +490,7 @@ BaseStruct *yaml_parse(YamlParser *parser, BaseStruct *strct) {
 
         case YAML_SEQUENCE_START_EVENT:
         case YAML_SEQUENCE_END_EVENT:
-            YamlParserError(event.get(), "Sequences are not allowed");
+            YamlParserError(event, "Sequences are not allowed");
             break;
 
         case YAML_MAPPING_START_EVENT: break;
