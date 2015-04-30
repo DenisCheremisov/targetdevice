@@ -132,16 +132,16 @@ public:
 
 BOOST_AUTO_TEST_CASE(test_real_connector) {
     std::auto_ptr<YamlParser> parser(YamlParser::get(harder));
-    Config conn;
-    BaseStruct *res = yaml_parse(parser.get(), &conn);
+    Config conf;
+    BaseStruct *res = yaml_parse(parser.get(), &conf);
     BOOST_CHECK(dynamic_cast<Config*>(res) != NULL);
-    BOOST_CHECK_EQUAL(conn.conn.host.value, "localhost");
-    BOOST_CHECK_EQUAL(conn.conn.port.value, 10023);
-    BOOST_CHECK_EQUAL(conn.conn.identity.value, "client_001");
+    BOOST_CHECK_EQUAL(conf.conn.host.value, "localhost");
+    BOOST_CHECK_EQUAL(conf.conn.port.value, 10023);
+    BOOST_CHECK_EQUAL(conf.conn.identity.value, "client_001");
 
     std::auto_ptr<YamlParser> wontwork(YamlParser::get(harder_error));
     BOOST_REQUIRE_THROW(
-        yaml_parse(wontwork.get(), &conn),
+        yaml_parse(wontwork.get(), &conf),
         YamlBaseError);
 }
 

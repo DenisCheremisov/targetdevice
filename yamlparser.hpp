@@ -153,11 +153,11 @@ public:
     }
 
     YamlEvent *get_event() {
-        YamlEvent *event = new YamlEvent;
-        if(!yaml_parser_parse(this, event)) {
-            throw YamlParserError(event, "parsing error after this token");
+        std::auto_ptr<YamlEvent> event(new YamlEvent);
+        if(!yaml_parser_parse(this, event.get())) {
+            throw YamlParserError(event.get(), "parsing error after this token");
         }
-        return event;
+        return event.release();
     }
 
     yaml_parser_t* store() {
@@ -326,8 +326,11 @@ public:
 
         str2struct::iterator req, opt;
         std::set<ScalarElement>::iterator used;
-        while(event = std::auto_ptr<YamlEvent>(parser->get_event()),
-              event->type != YAML_MAPPING_END_EVENT) {
+        while(true) {
+            std::auto_ptr<YamlEvent> event(parser->get_event());
+            if(event->type == YAML_MAPPING_END_EVENT) {
+                break;
+            }
             ScalarElement header(event.get());
             BaseStruct *strct = NULL;
             used = used_elements.find(header);
