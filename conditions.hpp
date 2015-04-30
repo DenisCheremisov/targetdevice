@@ -60,7 +60,7 @@ public:
     ~NoConditionError() throw() {};
     NoConditionError(std::string message): std::string(message) {};
 
-    const char *what() {
+    const char *what() const throw() {
         return this->c_str();
     }
 };
