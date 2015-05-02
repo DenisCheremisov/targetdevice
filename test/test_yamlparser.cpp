@@ -25,7 +25,7 @@ public:
     Struct() {
         add_required_field("a", &a);
         add_required_field("b", &b);
-        add_optional_field("c", &c);
+        add_required_field("c", &c);
     }
 };
 
@@ -41,6 +41,40 @@ BOOST_AUTO_TEST_CASE(test_simple_read) {
     BOOST_CHECK_EQUAL(strct.a.value, 1);
     BOOST_CHECK_EQUAL(strct.b.value, 2.0);
     BOOST_CHECK_EQUAL(strct.c.value, "hello");
+}
+
+
+class OptionalStruct: public Struct {
+public:
+    StringStruct d;
+
+    OptionalStruct() {
+        add_optional_field("d", &d);
+    }
+};
+
+
+BOOST_AUTO_TEST_CASE(test_simple_optional) {
+    std::auto_ptr<YamlParser> parser(
+        YamlParser::get(test_yaml + "\nd: world"));
+    OptionalStruct strct;
+    BaseStruct *res = yaml_parse(parser.get(), &strct);
+    BOOST_CHECK(dynamic_cast<OptionalStruct*>(res) != NULL);
+    BOOST_CHECK_EQUAL(strct.a.value, 1);
+    BOOST_CHECK_EQUAL(strct.b.value, 2.0);
+    BOOST_CHECK_EQUAL(strct.c.value, "hello");
+    BOOST_CHECK(strct.d.null == false);
+    BOOST_CHECK_EQUAL(strct.d.value, "world");
+
+    std::auto_ptr<YamlParser> parser2(
+        YamlParser::get(test_yaml));
+    OptionalStruct strct2;
+    res = yaml_parse(parser2.get(), &strct2);
+    BOOST_CHECK(dynamic_cast<OptionalStruct*>(res) != NULL);
+    BOOST_CHECK_EQUAL(strct2.a.value, 1);
+    BOOST_CHECK_EQUAL(strct2.b.value, 2.0);
+    BOOST_CHECK_EQUAL(strct2.c.value, "hello");
+    BOOST_CHECK(strct2.d.null);
 }
 
 
@@ -96,7 +130,7 @@ std::string harder =
 
 
 std::string harder_error = harder +
-    "  wrongfield: lalala\n";
+    "\n  wrongfield: lalala\n";
 
 
 class Connection: public ShellStruct {
@@ -152,6 +186,8 @@ std::string evenharder =
     "  switcher:\n"
     "    type: switcher\n"
     "    relay: targetdevice.1\n";
+std::string evenharder_error = evenharder +
+    "    junk: waste";
 
 
 class Boiler: public ShellStruct {
@@ -218,4 +254,11 @@ BOOST_AUTO_TEST_CASE(test_harder_config) {
     BOOST_CHECK(swt != NULL);
     BOOST_CHECK_EQUAL(swt->type.value, "switcher");
     BOOST_CHECK_EQUAL(swt->relay.value, "targetdevice.1");
+}
+
+
+BOOST_AUTO_TEST_CASE(test_harder_config_error) {
+    std::auto_ptr<YamlParser> parser(YamlParser::get(evenharder_error));
+    LargerConfig conf;
+    BOOST_REQUIRE_THROW(yaml_parse(parser.get(), &conf), YamlBaseError);
 }

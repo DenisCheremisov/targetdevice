@@ -78,12 +78,7 @@ public:
 };
 
 
-std::ostream& operator<<(std::ostream& buf, const ScalarElement& data) {
-    buf << (std::string)data << " (" << data.start_pos().first << "," <<
-        data.start_pos().second << " - " <<
-        data.end_pos().first << "," << data.end_pos().second << ")";
-    return buf;
-}
+std::ostream& operator<<(std::ostream& buf, const ScalarElement& data);
 
 
 class YamlParserError: public YamlBaseError {
@@ -200,11 +195,20 @@ public:
 };
 
 
+class BaseUserData {
+protected:
+    BaseUserData() {};
+public:
+    virtual ~BaseUserData() throw() {};
+};
+
+
 class BaseStruct {
 public:
+    bool null;
     ScalarElement start, finish;
 
-    BaseStruct() {}
+    BaseStruct(): null(true) {}
     virtual ~BaseStruct() throw() {}
 
     virtual BaseStruct *build(YamlParser *parser) = 0;
@@ -214,15 +218,18 @@ public:
     void set_finish(const ScalarElement &fin) {
         finish = fin;
     }
+
+    // Optional method for additional checks
+    // on parsed data
+    virtual void check(BaseUserData *) {};
 };
 
 
 class IntegerStruct: public BaseStruct {
 public:
-    bool null;
     int value;
 
-    IntegerStruct(): null(true), value(0) {
+    IntegerStruct(): value(0) {
     }
     ~IntegerStruct() throw() {};
 
@@ -256,10 +263,9 @@ public:
 
 class FloatStruct: public BaseStruct {
 public:
-    bool null;
     double value;
 
-    FloatStruct(): null(true), value(0) {
+    FloatStruct(): value(0) {
     }
     ~FloatStruct() throw() {};
 
@@ -293,10 +299,9 @@ public:
 
 class StringStruct: public BaseStruct {
 public:
-    bool null;
     std::string value;
 
-    StringStruct(): null(true), value("") {
+    StringStruct(): value("") {
     }
     ~StringStruct() throw() {};
 
@@ -323,9 +328,7 @@ private:
     str2struct optional;
 
 public:
-    bool null;
-
-    ShellStruct(): null(true) {}
+    ShellStruct() {}
     ~ShellStruct() throw() {};
 
     void add_required_field(std::string field_name, BaseStruct *structure) {
@@ -409,7 +412,23 @@ public:
             buf << " " << verb << " not defined";
             throw YamlBaseError(buf.str().c_str());
         }
+        null = false;
         return this;
+    }
+
+    void check(BaseUserData *data) {
+        for(str2struct::iterator it = required.begin();
+            it != required.end(); it++) {
+            if(!it->second->null) {
+                it->second->check(data);
+            }
+        }
+        for(str2struct::iterator it = optional.begin();
+            it != optional.end(); it++) {
+            if(!it->second->null) {
+                it->second->check(data);
+            }
+        }
     }
 };
 
@@ -441,7 +460,8 @@ public:
 
 template <class T>
 class MappingStruct: public BaseStruct,
-                     public std::map<ScalarElement, BaseStruct*> {
+                     public std::map<ScalarElement, BaseStruct*,
+                                     std::less<ScalarElement> > {
 public:
     MappingStruct() {
     }
@@ -468,41 +488,21 @@ public:
             r->set_start(header);
             (*this)[header] = r;
         }
+        null = false;
         return this;
+    }
+
+    void check(BaseUserData *data) {
+        for(MappingStruct<T>::iterator it = this->begin();
+            it != this->end(); it++) {
+            if(!it->second->null) {
+                it->second->check(data);
+            }
+        }
     }
 };
 
 
-BaseStruct *yaml_parse(YamlParser *parser, BaseStruct *strct) {
-    BaseStruct *res;
-    while(true) {
-        YamlEvent *event = parser->get_event();
-        switch(event->type) {
-        case YAML_NO_EVENT: break;
-        case YAML_STREAM_START_EVENT: break;
-        case YAML_STREAM_END_EVENT: break;
-
-        case YAML_DOCUMENT_START_EVENT:;
-            res = strct->build(parser);
-            break;
-
-        case YAML_DOCUMENT_END_EVENT: break;
-
-        case YAML_SEQUENCE_START_EVENT:
-        case YAML_SEQUENCE_END_EVENT:
-            YamlParserError(event, "Sequences are not allowed");
-            break;
-
-        case YAML_MAPPING_START_EVENT: break;
-        case YAML_MAPPING_END_EVENT: break;
-        default: ;
-        }
-        if(event->type == YAML_DOCUMENT_END_EVENT) {
-            break;
-        }
-    }
-    return res;
-}
-
+BaseStruct *yaml_parse(YamlParser *parser, BaseStruct *strct);
 
 #endif // _YAMLPARSER_HPP_INCLUDED_

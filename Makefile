@@ -47,8 +47,8 @@ prepare:
 test_targetdevice: targetdevice.o test/test_targetdevice.cpp
 	$(COMPILE) -o test_targetdevice targetdevice.o test/test_targetdevice.cpp $(TESTFLAGS)
 
-test_confparser: confparser.o test/test_confparser.cpp targetdevice.o
-	$(COMPILE) -o test_confparser confparser.o targetdevice.o test/test_confparser.cpp $(TESTFLAGS) -lyaml
+test_confparser: confparser.o test/test_confparser.cpp targetdevice.o yamlparser.o
+	$(COMPILE) -o test_confparser yamlparser.o confparser.o targetdevice.o test/test_confparser.cpp $(TESTFLAGS) -lyaml
 
 test_runtime: runtime.o test/test_runtime.cpp
 	$(COMPILE) -o test_runtime runtime.o test/test_runtime.cpp $(TESTFLAGS)
@@ -68,5 +68,5 @@ test_network: network.o test/test_network.cpp
 test_controller: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o test/test_controller.cpp
 	$(COMPILE) -o test_controller runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o test/test_controller.cpp $(TESTFLAGS) -lyaml -lssl -lcrypto
 
-test_yamlparser: test/test_yamlparser.cpp yamlparser.hpp
-	$(COMPILE) -o test_yamlparser test/test_yamlparser.cpp $(TESTFLAGS) -lyaml
+test_yamlparser: test/test_yamlparser.cpp yamlparser.o
+	$(COMPILE) -o test_yamlparser test/test_yamlparser.cpp yamlparser.o $(TESTFLAGS) -lyaml

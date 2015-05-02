@@ -3,6 +3,7 @@
 #define BOOST_TEST_MODULE ConfParserModule
 
 #include <cstdio>
+#include <cerrno>
 #include <memory>
 
 #include <boost/test/unit_test.hpp>
@@ -15,89 +16,80 @@ const char *CONF_TEST_FILE = "conf/test_targetdevice.yaml";
 using namespace std;
 
 
-BOOST_AUTO_TEST_CASE(test_raw_parsing) {
+BOOST_AUTO_TEST_CASE(test_conf_yamlparsing) {
     FILE *fp;
-    fp = open_conf_fp(YAML_TEST_FILE);
+    fp = fopen(CONF_TEST_FILE, "r");
     if(fp == NULL) {
-        perror(YAML_TEST_FILE);
-        throw runtime_error(string("Cannot open sample file: ") + YAML_TEST_FILE);
+        throw runtime_error(strerror(errno));
     }
 
-    MapElement *res, *tmp, *deep;
+    std::auto_ptr<YamlParser> parser(YamlParser::get(fp));
+    ConfigStruct config;
+    yaml_parse(parser.get(), &config);
 
-    res = dynamic_cast<MapElement*>(raw_conf_parse(fp));
+    BOOST_CHECK_EQUAL(config.daemon.pidfile.value, "targetdevice.pid");
+    BOOST_CHECK_EQUAL(config.daemon.logfile.value, "targetdevice.log");
 
-    BOOST_CHECK_EQUAL(res->size(), 3);
-    tmp = dynamic_cast<MapElement*>((*res)["connection"]);
-    BOOST_CHECK_EQUAL(tmp->size(), 3);
-    BOOST_CHECK_EQUAL(*dynamic_cast<ScalarElement*>((*tmp)["host"]), "localhost");
-    BOOST_CHECK_EQUAL(*dynamic_cast<ScalarElement*>((*tmp)["port"]), "10023");
-    BOOST_CHECK_EQUAL(*dynamic_cast<ScalarElement*>((*tmp)["identity"]), "client_001");
+    BOOST_CHECK_EQUAL(config.connection.host.value, "localhost");
+    BOOST_CHECK_EQUAL(config.connection.port.value, 10023);
+    BOOST_CHECK_EQUAL(config.connection.identity.value, "client_001");
 
-    tmp = dynamic_cast<MapElement*>((*res)["daemon"]);
-    BOOST_CHECK_EQUAL(tmp->size(), 3);
-    BOOST_CHECK_EQUAL(*dynamic_cast<ScalarElement*>((*tmp)["logfile"]), "/var/log/targetdevice.log");
-    BOOST_CHECK_EQUAL(*dynamic_cast<ScalarElement*>((*tmp)["pidfile"]), "/var/pids/targetdevice.pid");
-    BOOST_CHECK_EQUAL(*dynamic_cast<ScalarElement*>((*tmp)["serial"]), "/dev/usb/tts/0");
+    BOOST_CHECK_EQUAL(config.drivers.size(), 1);
+    BaseStruct *tmp;
+    tmp = config.drivers.at("targetdevice");
+    BOOST_CHECK(dynamic_cast<SerialDriverStruct*>(tmp) != NULL);
+    SerialDriverStruct &driver = *dynamic_cast<SerialDriverStruct*>(tmp);
+    BOOST_CHECK_EQUAL(driver.type.value, "serial");
+    BOOST_CHECK_EQUAL(driver.path.value, "/dev/pts/19");
 
-    tmp = dynamic_cast<MapElement*>((*res)["rules"]);
-    BOOST_CHECK_EQUAL(tmp->size(), 6);
+    BOOST_CHECK_EQUAL(config.devices.size(), 3);
+    tmp = config.devices.at("switcher");
+    BOOST_CHECK(tmp->null == false);
+    BOOST_CHECK(dynamic_cast<SerialDeviceStruct*>(tmp) != NULL);
+    SerialDeviceStruct &switcher = *dynamic_cast<SerialDeviceStruct*>(tmp);
+    BOOST_CHECK_EQUAL(switcher.type.value, "switcher");
+    BOOST_CHECK_EQUAL(switcher.relay.value, "targetdevice.2");
+    BOOST_CHECK(switcher.temperature.null);
+    BOOST_CHECK(switcher.factor.null);
+    BOOST_CHECK(switcher.shift.null);
 
-    deep = dynamic_cast<MapElement*>((*tmp)["is-connected"]);
-    BOOST_CHECK_EQUAL(deep->size(), 1);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>((*deep)["return"])), "bit");
+    tmp = config.devices.at("temperature");
+    BOOST_CHECK(tmp->null == false);
+    BOOST_CHECK(dynamic_cast<SerialDeviceStruct*>(tmp) != NULL);
+    SerialDeviceStruct &temperature = *dynamic_cast<SerialDeviceStruct*>(tmp);
+    BOOST_CHECK_EQUAL(temperature.type.value, "thermalswitcher");
+    BOOST_CHECK_EQUAL(temperature.temperature.value, "targetdevice.1");
+    BOOST_CHECK_EQUAL(temperature.factor.value, 12.0);
+    BOOST_CHECK_EQUAL(temperature.shift.value, 13.0);
+    BOOST_CHECK(temperature.relay.null);
 
-    deep = dynamic_cast<MapElement*>((*tmp)["relay-set"]);
-    BOOST_CHECK_EQUAL(deep->size(), 2);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>((*deep)["return"])), "bit");
-    MapElement &params = *(dynamic_cast<MapElement*>((*deep)["params"]));
-    BOOST_CHECK_EQUAL(params.size(), 2);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>(params["port"])), "integer");
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>(params["value"])), "bit");
+    tmp = config.devices.at("boiler");
+    BOOST_CHECK(tmp->null == false);
+    BOOST_CHECK(dynamic_cast<SerialDeviceStruct*>(tmp) != NULL);
+    SerialDeviceStruct &boiler = *dynamic_cast<SerialDeviceStruct*>(tmp);
+    BOOST_CHECK_EQUAL(boiler.type.value, "boiler");
+    BOOST_CHECK_EQUAL(boiler.relay.value, "targetdevice.1");
+    BOOST_CHECK_EQUAL(boiler.temperature.value, "targetdevice.2");
+    BOOST_CHECK_EQUAL(boiler.factor.value, 5.0);
+    BOOST_CHECK_EQUAL(boiler.shift.value, 6.0);
 
-    deep = dynamic_cast<MapElement*>((*tmp)["line-get"]);
-    BOOST_CHECK_EQUAL(deep->size(), 2);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>((*deep)["return"])), "bit");
-    MapElement &params1 = *(dynamic_cast<MapElement*>((*deep)["params"]));
-    BOOST_CHECK_EQUAL(params1.size(), 1);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>(params1["lineno"])), "integer");
+    UserData userdata;
+    config.check(&userdata);
 
-    deep = dynamic_cast<MapElement*>((*tmp)["line-set"]);
-    BOOST_CHECK_EQUAL(deep->size(), 2);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>((*deep)["return"])), "bit");
-    MapElement &params2 = *(dynamic_cast<MapElement*>((*deep)["params"]));
-    BOOST_CHECK_EQUAL(params.size(), 2);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>(params2["lineno"])), "integer");
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>(params2["value"])), "bit");
-
-    deep = dynamic_cast<MapElement*>((*tmp)["adc-get"]);
-    BOOST_CHECK_EQUAL(deep->size(), 2);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>((*deep)["return"])), "float");
-    MapElement &params3 = *(dynamic_cast<MapElement*>((*deep)["params"]));
-    BOOST_CHECK_EQUAL(params1.size(), 1);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>(params3["channel"])), "integer");
-
-    deep = dynamic_cast<MapElement*>((*tmp)["is-connected"]);
-    BOOST_CHECK_EQUAL(deep->size(), 1);
-    BOOST_CHECK_EQUAL(*(dynamic_cast<ScalarElement*>((*deep)["return"])), "bit");
-
-    delete res;
+    fclose(fp);
 }
 
 
 BOOST_AUTO_TEST_CASE(test_conf_parsing) {
     FILE *fp;
     fp = fopen(CONF_TEST_FILE, "r");
-    if(fp == NULL) {
-        perror(CONF_TEST_FILE);
-        throw runtime_error(string("Cannot open sample file: ") + CONF_TEST_FILE);
-    }
-
-    MapElement *res, *tmp, *deep;
-
-    res = dynamic_cast<MapElement*>(raw_conf_parse(fp));
-
-    auto_ptr<Config> conf(config_parse(res));
+    BOOST_CHECK(fp != NULL);
+    std::auto_ptr<YamlParser> parser(YamlParser::get(fp));
+    ConfigStruct rawconf;
+    yaml_parse(parser.get(), &rawconf);
+    UserData userdata;
+    rawconf.check(&userdata);
+    auto_ptr<Config> conf(Config::get_from_struct(&rawconf));
 
     // Check daemon section
     BOOST_CHECK_EQUAL(conf->daemon().logfile, "targetdevice.log");
@@ -135,13 +127,21 @@ BOOST_AUTO_TEST_CASE(test_conf_parsing) {
     BOOST_CHECK_EQUAL(ptermo->factor(), 12);
     BOOST_CHECK_EQUAL(ptermo->shift(), 13);
 
-    delete res;
+    fclose(fp);
 }
 
 
 void parse_test_fnc(FILE *fp) {
-    auto_ptr<MapElement> res(dynamic_cast<MapElement*>(raw_conf_parse(fp)));
-    auto_ptr<Config> conf(config_parse(res.get()));
+    std::auto_ptr<YamlParser> parser(YamlParser::get(fp));
+    ConfigStruct rawconf;
+    try {
+        yaml_parse(parser.get(), &rawconf);
+    } catch(YamlBaseError e) {
+        throw ParserError("handled", e.what());
+    }
+    UserData userdata;
+    rawconf.check(&userdata);
+    auto_ptr<Config> conf(Config::get_from_struct(&rawconf));
 }
 
 

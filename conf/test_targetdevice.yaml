@@ -26,7 +26,6 @@ devices:
 
   temperature:
     type: thermalswitcher
-    relay: targetdevice.4
     temperature: targetdevice.1
     factor: 12
     shift: 13
