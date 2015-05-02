@@ -39,7 +39,7 @@ public:
     NamedSchedule *sched;
 
     GlobalDataInitializer(const char *config_file_name) {
-        FILE *fp = open_conf_fp(config_file_name);
+        FILE *fp = fopen(config_file_name, "r");
         if(fp == NULL) {
             perror(config_file_name);
             errx(
@@ -47,8 +47,17 @@ public:
                 "Cannot open configuration file: %s",
                 config_file_name);
         }
-        auto_ptr<MapElement> res(dynamic_cast<MapElement*>(raw_conf_parse(fp)));
-        conf = config_parse(res.get());
+        auto_ptr<YamlParser> parser(YamlParser::get(fp));
+        ConfigStruct rawconf;
+        UserData userdata;
+        yaml_parse(parser.get(), &rawconf);
+        try {
+            rawconf.check(&userdata);
+        } catch(ParserError e) {
+            cerr << e.what() << endl;
+            exit(-1);
+        }
+        conf = Config::get_from_struct(&rawconf);
 
         drivers = new Drivers(conf->drivers());
         devices = new Devices(*drivers, conf->devices());
@@ -167,7 +176,7 @@ int main(int argc, char **argv) {
                 config_file_name?config_file_name:CONFIG_FILE_NAME));
         init = _init;
     } catch(exception &err) {
-        cerr << err.what();
+        cerr << err.what() << endl;
         exit(EXIT_FAILURE);
     }
 

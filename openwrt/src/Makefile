@@ -34,8 +34,12 @@ network.o: network.cpp network.hpp
 controller.o: controller.cpp controller.hpp
 	$(COMPILE) -c controller.cpp
 
-$(BINARY): main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o
-	$(CXX) $(CFLAGS) $(LDFLAGS) $(WFLAGS) -o $(BINARY) main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o -lyaml -lssl -lcrypto -lpthread
+yamlparser.o: yamlparser.cpp yamlparser.hpp
+	$(COMPILE) -c yamlparser.cpp
+
+
+$(BINARY): main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o yamlparser.o
+	$(CXX) $(CFLAGS) $(LDFLAGS) $(WFLAGS) -o $(BINARY) main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o yamlparser.o -lyaml -lssl -lcrypto -lpthread
 
 clean:
 	rm -f $(BINARY) *.o
