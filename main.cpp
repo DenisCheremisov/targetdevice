@@ -18,6 +18,7 @@
 
 #include <pthread.h>
 #include <openssl/ssl.h>
+#include <boost/program_options.hpp>
 
 #include "confparser.hpp"
 #include "confbind.hpp"
@@ -149,31 +150,40 @@ public:
 
 
 int main(int argc, char **argv) {
-    char *config_file_name;
     pid_t childpid;
 
     bool daemonize = false;
+    string config_file_name;
 
-    for(int i = 1; i < argc; i++) {
-        if(string(argv[i]) == "--daemonize") {
-            daemonize = true;
-        }
+    namespace po = boost::program_options;
+    po::options_description desc("Usage");
+    desc.add_options()
+        ("help,h", "produce help message")
+        ("daemonize,d", po::bool_switch(&daemonize)->default_value(false),
+         "start program as a daemon")
+        ("conf,c",
+         po::value<std::string>(
+             &config_file_name)->default_value(CONFIG_FILE_NAME),
+         "configuration file path");
+    po::variables_map opts;
+    po::store(po::parse_command_line(argc, argv, desc), opts);
+
+    try {
+        po::notify(opts);
+    } catch(std::exception &e) {
+        cerr << "Error: " << e.what() << endl;
+        return 1;
     }
 
-    config_file_name = NULL;
-    for(int i = 1; i < argc; i++) {
-        if(string(argv[i]) == "--conf") {
-            if(i == (argc - 1)) {
-                errx(EXIT_FAILURE, "No config file name after --conf");
-            }
-            config_file_name = argv[i + 1];
-        }
+    if(opts.count("help")) {
+        cout << desc << endl;
+        return 0;
     }
+
     auto_ptr<GlobalDataInitializer> init;
     try {
         auto_ptr<GlobalDataInitializer> _init(
-            new GlobalDataInitializer(
-                config_file_name?config_file_name:CONFIG_FILE_NAME));
+            new GlobalDataInitializer(config_file_name.c_str()));
         init = _init;
     } catch(exception &err) {
         cerr << err.what() << endl;
