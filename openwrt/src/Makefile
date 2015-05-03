@@ -1,6 +1,6 @@
 CFLAGS?=-O2
 CFLAGS+=
-WFLAGS:=-Wall -Werror -pedantic -Wl,--verbose
+WFLAGS:=-Wall -Werror -pedantic
 BINARY:=tdevice
 
 COMPILE=$(CXX) $(CFLAGS) $(WFLAGS)

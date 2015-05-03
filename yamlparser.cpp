@@ -10,7 +10,7 @@ std::ostream& operator<<(std::ostream& buf, const ScalarElement& data) {
 
 
 BaseStruct *yaml_parse(YamlParser *parser, BaseStruct *strct) {
-    BaseStruct *res;
+    BaseStruct *res = NULL;
     while(true) {
         YamlEvent *event = parser->get_event();
         switch(event->type) {
@@ -37,5 +37,9 @@ BaseStruct *yaml_parse(YamlParser *parser, BaseStruct *strct) {
             break;
         }
     }
-    return res;
+    if(res != NULL) {
+        return res;
+    } else {
+        return strct;
+    }
 }
