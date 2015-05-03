@@ -39,7 +39,7 @@ yamlparser.o: yamlparser.cpp yamlparser.hpp
 
 
 $(BINARY): main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o yamlparser.o
-	$(CXX) $(CFLAGS) $(LDFLAGS) $(WFLAGS) -o $(BINARY) main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o yamlparser.o -lyaml -lssl -lcrypto -lpthread
+	$(CXX) $(CFLAGS) $(LDFLAGS) $(WFLAGS) -o $(BINARY) main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o yamlparser.o -lyaml -lssl -lcrypto -lpthread -lboost_program_options
 
 clean:
 	rm -f $(BINARY) *.o
