@@ -18,7 +18,6 @@
 
 #include <pthread.h>
 #include <openssl/ssl.h>
-#include <boost/program_options.hpp>
 
 #include "confparser.hpp"
 #include "confbind.hpp"
@@ -149,35 +148,75 @@ public:
 };
 
 
+
+class TableFormatter: public list<pair<string, string> > {
+private:
+    size_t max_head;
+
+public:
+    TableFormatter(): max_head(0) {};
+    void add_raw(string head, string content) {
+        if(max_head < head.size()) {
+            max_head = head.size();
+        }
+        this->push_back(pair<string, string>(head, content));
+    }
+
+    string out_raw(const pair<string, string> &src) const {
+        return src.first + string(max_head - src.first.size() + 4, ' ') +
+            src.second;
+    }
+};
+
+
+ostream& operator<<(ostream &dst, const TableFormatter &src) {
+    for(TableFormatter::const_iterator it = src.begin();
+        it != src.end(); it++) {
+        dst << src.out_raw(*it) << endl;
+    }
+    return dst;
+}
+
+
 int main(int argc, char **argv) {
     pid_t childpid;
 
     bool daemonize = false;
-    string config_file_name;
+    string config_file_name = CONFIG_FILE_NAME;
+    int opt;
 
-    namespace po = boost::program_options;
-    po::options_description desc("Usage");
-    desc.add_options()
-        ("help,h", "produce help message")
-        ("daemonize,d", po::bool_switch(&daemonize)->default_value(false),
-         "start program as a daemon")
-        ("conf,c",
-         po::value<std::string>(
-             &config_file_name)->default_value(CONFIG_FILE_NAME),
-         "configuration file path");
-    po::variables_map opts;
-    po::store(po::parse_command_line(argc, argv, desc), opts);
-
-    try {
-        po::notify(opts);
-    } catch(std::exception &e) {
-        cerr << "Error: " << e.what() << endl;
-        return 1;
-    }
-
-    if(opts.count("help")) {
-        cout << desc << endl;
-        return 0;
+    while((opt = getopt(argc, argv, "hdc:")) != -1) {
+        switch(opt) {
+        case 'h': {
+            cout << "Usage:" << endl;
+            TableFormatter formatter;
+            formatter.add_raw("-h", "produce help message");
+            formatter.add_raw("-d", "start program as a daemon");
+            formatter.add_raw(
+                string("-c <arg> (=") +
+                string(CONFIG_FILE_NAME) +
+                ")", "configuration file path");
+            cout << formatter << endl;
+            return 0;
+        }
+        case 'd':
+            daemonize = true;
+            break;
+        case 'c':
+            config_file_name = optarg;
+            break;
+        case '?':
+            if(optopt == 'c') {
+                ;
+            } else if(isprint(optopt)) {
+                ;
+            } else {
+                cerr << "Unknown option character" << optopt << endl;
+            }
+            return -1;
+        default:
+            abort();
+        }
     }
 
     auto_ptr<GlobalDataInitializer> init;

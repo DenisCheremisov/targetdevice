@@ -10,7 +10,7 @@ PKG_NAME:=tdevice
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
-PKG_BUILD_DEPENDS := +libpthread +libyaml +libopenssl +libstdc++ +boost-program_options
+PKG_BUILD_DEPENDS := +libpthread +libyaml +libopenssl +libstdc++
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -19,7 +19,7 @@ define Package/tdevice
   CATEGORY:=Utilities
   TITLE:=Target device remote control actor
   MAINTAINER:=Denis Cheremisov <denis@cheremisov.net>
-  DEPENDS:=+libpthread +libyaml +libopenssl +libstdcpp +boost-program_options
+  DEPENDS:=+libpthread +libyaml +libopenssl +libstdcpp
 endef
 
 define Package/tdevice/description
