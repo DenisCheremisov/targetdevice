@@ -67,10 +67,6 @@ BOOST_AUTO_TEST_CASE(test_single_command) {
 
     SingleCommandSchedule sched(new TestCommand, ftr, -1);
     auto_ptr<Command> command(new TestCommand);
-    BOOST_REQUIRE_THROW(new SingleCommandSchedule(command.get(), time(NULL) - 1, -1),
-                        ScheduleSetupError);
-    BOOST_REQUIRE_THROW(new SingleCommandSchedule(command.get(), ftr, ftr),
-                        ScheduleSetupError);
     BOOST_CHECK_EQUAL(sched.is_expired(), false);
     Commands *res = sched.get_commands(ftr + 1);
     BOOST_CHECK_EQUAL(res->size(), 1);
@@ -188,16 +184,6 @@ BOOST_AUTO_TEST_CASE(test_conditioned_command) {
 
     ConditionedSchedule sched(new TestCommand, new TestCommand2,
                               new Condition, ftr, -1);
-    BOOST_REQUIRE_THROW(new ConditionedSchedule(cmd.get(),
-                                                cmd2.get(),
-                                                cnd.get(),
-                                                15, -1),
-                        ScheduleSetupError);
-    BOOST_REQUIRE_THROW(new ConditionedSchedule(cmd.get(),
-                                                cmd2.get(),
-                                                cnd.get(),
-                                                ftr, ftr),
-                        ScheduleSetupError);
     TestCommand::counter = 0;
     TestCommand2::counter = 0;
 

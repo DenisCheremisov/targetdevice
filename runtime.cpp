@@ -124,12 +124,6 @@ SingleCommandSchedule::SingleCommandSchedule(Command *cmd,
             RUNTIME_WAKE_PAUSE*2 << " seconds, now it is only " << restart;
         throw ScheduleSetupError(buf.str());
     }
-    if(start > 0 && start <= time(NULL)) {
-        throw ScheduleSetupError("Attempt to set a task to the past");
-    }
-    if(stop > 0 && stop <= start) {
-        throw ScheduleSetupError("Attempt to set stop point before the start");
-    }
     command = cmd;
     start_point = start;
     stop_point = stop;
@@ -230,12 +224,6 @@ ConditionedSchedule::ConditionedSchedule(Command *cmd,
                                          BaseCondition *cnd,
                                          time_t start, time_t stop):
     command(cmd), coupled_command(coupled_cmd), condition(cnd) {
-    if(start > 0 && start <= time(NULL)) {
-        throw ScheduleSetupError("Attempt to set task to the past");
-    }
-    if(stop >= 0 && stop <= start) {
-        throw ScheduleSetupError("Attempt to set stop point before the start");
-    }
     start_point = start;
     stop_point = stop;
     to_be_stopped = false;
