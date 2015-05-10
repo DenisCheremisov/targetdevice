@@ -37,8 +37,10 @@ public:
             perror(CONFIG_FILE_NAME);
             throw runtime_error(string("Cannot open sample file: ") + CONFIG_FILE_NAME);
         }
-        auto_ptr<MapElement> res(dynamic_cast<MapElement*>(raw_conf_parse(fp)));
-        conf = config_parse(res.get());
+        std::auto_ptr<YamlParser> parser(YamlParser::get(fp));
+        ConfigStruct rawconf;
+        yaml_parse(parser.get(), &rawconf);
+        conf = Config::get_from_struct(&rawconf);
 
         drivers = new Drivers(conf->drivers());
         devices = new Devices(*drivers, conf->devices());
@@ -492,7 +494,7 @@ BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
         "ID=0xfff2:TYPE=VALUE:COMMAND=boiler.temperature\n"
         "ID=0xfff3:TYPE=VALUE:COMMAND=boiler.temperature\n"
         "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
-        "ID=2:TYPE=COUPLE:NAME=2:COMMAND=boiler.on:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
+        "ID=2:TYPE=COUPLED:NAME=2:COMMAND=boiler.on:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
         "ID=3:TYPE=CONDITION:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
         ;
     stringstream buf;
@@ -531,7 +533,7 @@ BOOST_AUTO_TEST_CASE(test_wrong_instruction_list_model) {
     string req =
         "ID=0xfff1:TYPE=VALUE:COMMAND=temperature.on\n"
         "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
-        "ID=2:TYPE=COUPLE:NAME=2:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
+        "ID=2:TYPE=COUPLED:NAME=2:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
         "ID=3:TYPE=CONDITION:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
 
     stringstream buf;

@@ -59,14 +59,14 @@ test_confbind: confbind.o targetdevice.o confparser.o test/test_confbind.cpp
 test_commands: commands.o confbind.o targetdevice.o confparser.o test/test_commands.cpp
 	$(COMPILE) -o test_commands confbind.o targetdevice.o confparser.o commands.o test/test_commands.cpp $(TESTFLAGS) -lyaml -lpthread
 
-test_model: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o test/test_model.cpp
-	$(COMPILE) -o test_model runtime.o commands.o model.o confbind.o targetdevice.o confparser.o test/test_model.cpp $(TESTFLAGS) -lyaml
+test_model: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o yamlparser.o test/test_model.cpp
+	$(COMPILE) -o test_model runtime.o commands.o model.o confbind.o targetdevice.o confparser.o yamlparser.o test/test_model.cpp $(TESTFLAGS) -lyaml
 
 test_network: network.o test/test_network.cpp
 	$(COMPILE) -o test_network network.o test/test_network.cpp $(TESTFLAGS) -lssl -lcrypto
 
-test_controller: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o test/test_controller.cpp
-	$(COMPILE) -o test_controller runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o test/test_controller.cpp $(TESTFLAGS) -lyaml -lssl -lcrypto
+test_controller: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o yamlparser.o test/test_controller.cpp
+	$(COMPILE) -o test_controller runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o yamlparser.o test/test_controller.cpp $(TESTFLAGS) -lyaml -lssl -lcrypto
 
 test_yamlparser: test/test_yamlparser.cpp yamlparser.o
 	$(COMPILE) -o test_yamlparser test/test_yamlparser.cpp yamlparser.o $(TESTFLAGS) -lyaml

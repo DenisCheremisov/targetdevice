@@ -490,7 +490,7 @@ string InstructionListModel::execute(model_call_params_t &params)
                 values.push_back(new ValueInstructionLine(ref));
             } else if(type == "SINGLE") {
                 singles.push_back(new SingleInstructionLine(ref));
-            } else if(type == "COUPLE") {
+            } else if(type == "COUPLED") {
                 couples.push_back(new CoupledInstructionLine(ref));
             } else if(type == "CONDITION") {
                 conditionals.push_back(new ConditionInstructionLine(ref));
