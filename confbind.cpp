@@ -39,7 +39,7 @@ void DeviceSwitcher::turn_on() {
 
 
 void DeviceSwitcher::turn_off() {
-    relay_device->relay_set(this->relay_port, 1);
+    relay_device->relay_set(this->get_relay_port(), 0);
 }
 
 
