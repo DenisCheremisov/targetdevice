@@ -10,7 +10,7 @@ connection:
 drivers:
   targetdevice:
     type: serial
-    path: /dev/pts/4
+    path: /dev/ttyACM0
 
 devices:
   boiler:

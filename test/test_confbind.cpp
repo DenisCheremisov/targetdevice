@@ -13,7 +13,7 @@
 
 using namespace std;
 
-const char *CONFIG_FILE_NAME = "test_targetdevice.yaml";
+const char *CONFIG_FILE_NAME = "conf/test_targetdevice.yaml";
 
 
 BOOST_AUTO_TEST_CASE(test_driver_creation) {
@@ -31,8 +31,10 @@ BOOST_AUTO_TEST_CASE(test_driver_creation) {
         perror(CONFIG_FILE_NAME);
         throw runtime_error(string("Cannot open sample file: ") + CONFIG_FILE_NAME);
     }
-    auto_ptr<MapElement> res(dynamic_cast<MapElement*>(raw_conf_parse(fp)));
-    auto_ptr<Config> conf(config_parse(res.get()));
+    std::auto_ptr<YamlParser> parser(YamlParser::get(fp));
+    ConfigStruct rawconf;
+    yaml_parse(parser.get(), &rawconf);
+    auto_ptr<Config> conf(Config::get_from_struct(&rawconf));
 
     Drivers drivers(conf->drivers());
     drivers.serial("targetdevice");

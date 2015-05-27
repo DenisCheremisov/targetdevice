@@ -398,10 +398,6 @@ BOOST_AUTO_TEST_CASE(test_conditioned_schedule_getting) {
     buf << ":COUPLE=boiler.off:CONDITION=boiler.temperature.LT_80";
     BaseInstructionLine::deconstruct(buf.str(), ref);
     ConditionInstructionLine instr1(ref);
-
-    BOOST_REQUIRE_THROW(
-        auto_ptr<BaseSchedule>((get_conditioned(params, &instr1))),
-        ScheduleSetupError);
 }
 
 
@@ -437,9 +433,6 @@ BOOST_AUTO_TEST_CASE(test_coupled_schedule_getting) {
     BaseInstructionLine::deconstruct(buf.str(), ref);
     CoupledInstructionLine instr1(ref);
 
-    BOOST_REQUIRE_THROW(
-        auto_ptr<BaseSchedule>((get_coupled(params, &instr1))),
-        ScheduleSetupError);
 }
 
 
@@ -475,9 +468,6 @@ BOOST_AUTO_TEST_CASE(test_single_schedule_getting) {
     BaseInstructionLine::deconstruct(buf.str(), ref);
     SingleInstructionLine instr1(ref);
 
-    BOOST_REQUIRE_THROW(
-        auto_ptr<BaseSchedule>((get_single(params, &instr1))),
-        ScheduleSetupError);
 }
 
 
@@ -495,7 +485,7 @@ BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
         "ID=0xfff3:TYPE=VALUE:COMMAND=boiler.temperature\n"
         "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
         "ID=2:TYPE=COUPLED:NAME=2:COMMAND=boiler.on:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
-        "ID=3:TYPE=CONDITION:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
+        "ID=3:TYPE=CONDITIONED:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
         ;
     stringstream buf;
     buf << time(NULL) + 4000;
@@ -534,7 +524,7 @@ BOOST_AUTO_TEST_CASE(test_wrong_instruction_list_model) {
         "ID=0xfff1:TYPE=VALUE:COMMAND=temperature.on\n"
         "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
         "ID=2:TYPE=COUPLED:NAME=2:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
-        "ID=3:TYPE=CONDITION:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
+        "ID=3:TYPE=CONDITIONED:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
 
     stringstream buf;
     buf << time(NULL) + 4000;
