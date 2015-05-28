@@ -447,10 +447,8 @@ BaseSchedule* get_conditioned(model_call_params_t &params,
     auto_ptr<Command> couple(command_from_string(params, item->couple));
 
     BaseSchedule *res = new ConditionedSchedule(
-        cmd.get(), couple.get(), cond.get(), item->start, item->stop);
-    cmd.release();
-    couple.release();
-    cond.release();
+        cmd.release(), couple.release(), cond.release(),
+        item->start, item->stop);
     return res;
 }
 

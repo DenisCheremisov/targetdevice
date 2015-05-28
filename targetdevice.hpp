@@ -110,13 +110,31 @@ public:
 };
 
 
+class BaseSerialCommunicator {
+public:
+    virtual ~BaseSerialCommunicator() throw() {};
+    virtual std::string talk(std::string req) = 0;
+};
+
+
+class SerialCommunicator: public BaseSerialCommunicator {
+private:
+    int fd;
+
+public:
+    SerialCommunicator(std::string path);
+    ~SerialCommunicator() throw();
+    std::string talk(std::string req);
+};
+
+
 class TargetDeviceDriver {
 protected:
-    int fd;
+    SerialCommunicator *comm;
     void port_talk(std::string request, std::string &response);
 
 public:
-    TargetDeviceDriver(std::string file_name);
+    TargetDeviceDriver(SerialCommunicator *comm);
     virtual ~TargetDeviceDriver() throw();
 
     bool connected();

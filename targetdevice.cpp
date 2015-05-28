@@ -88,16 +88,42 @@ int port_open(const char *portname) {
 using namespace std;
 
 
-TargetDeviceDriver::TargetDeviceDriver(string file_name) {
+SerialCommunicator::SerialCommunicator(string path) {
     this->fd = port_open(file_name.c_str());
     if(this->fd <= 0) {
-        throw NoDeviceError(file_name);
+        throw NoDeviceError(path);
     }
 }
 
 
-TargetDeviceDriver::~TargetDeviceDriver() throw() {
+SerialCommunicator::~SerialCommunicator() {
     close(this->fd);
+}
+
+
+string SerialCommunicator::talk(string request) {
+    const size_t len = request.length();
+    ssize_t count;
+    count = write(fd, request.c_str(), len);
+    if(count < (int)len) {
+        throw TargetDeviceInternalError(request);
+    }
+    char response_buf[256];
+    count = read(fd, response_buf, 255);
+    if(count < 3 || count > 255) {
+        throw TargetDeviceInternalError(request);
+    }
+    return string(response_buf, count);
+}
+
+
+TargetDeviceDriver::TargetDeviceDriver(SerialCommunicator *cm) {
+    this->comm = cm;
+}
+
+
+TargetDeviceDriver::~TargetDeviceDriver() throw() {
+    delete this->comm;
 }
 
 
@@ -113,18 +139,8 @@ void TargetDeviceDriver::port_talk(string request, string &response) {
         throw TargetDeviceValidationError(request + ": command must ends with \\r\\n");
     }
 
+    response = this->comm->talk(request);
     ssize_t count;
-    count = write(fd, request.c_str(), len);
-    if(count < (int)len) {
-        throw TargetDeviceInternalError(request);
-    }
-    char response_buf[256];
-    count = read(fd, response_buf, 255);
-    if(count < 3 || count > 255) {
-        throw TargetDeviceInternalError(request);
-    }
-    response_buf[count] = '\0';
-    response = string(response_buf);
     if(response.substr(0, 4) == "#ERR") {
         throw TargetDeviceOperationError(response);
     }
