@@ -1,4 +1,4 @@
-CPP=clang++
+CPP=g++
 LDFLAGS=
 IFLAGS=
 OPTS=-g -O0 -Wall -Werror -pedantic
@@ -44,8 +44,17 @@ clean:
 prepare:
 	cp *.hpp *.cpp openwrt/src/
 
-test_targetdevice: targetdevice.o test/test_targetdevice.cpp
-	$(COMPILE) -o test_targetdevice targetdevice.o test/test_targetdevice.cpp $(TESTFLAGS)
+test_tdevice: targetdevice.o test/tdevice.cpp
+	$(COMPILE) -o test_tdevice targetdevice.o test/tdevice.cpp $(TESTFLAGS)
+
+test_drivers.o: test/drivers.cpp
+	$(COMPILE) -std=c++11 -o test_drivers.o -c test/drivers.cpp
+
+test_dummy_driver: test_drivers.o test/test_dummy_driver.cpp
+	$(COMPILE) -o test_dummy_driver test_drivers.o test/test_dummy_driver.cpp $(TESTFLAGS)
+
+test_targetdevice: targetdevice.o test/test_targetdevice.cpp test_drivers.o
+	$(COMPILE) -o test_targetdevice targetdevice.o test_drivers.o test/test_targetdevice.cpp $(TESTFLAGS)
 
 test_confparser: confparser.o test/test_confparser.cpp targetdevice.o yamlparser.o
 	$(COMPILE) -o test_confparser yamlparser.o confparser.o targetdevice.o test/test_confparser.cpp $(TESTFLAGS) -lyaml

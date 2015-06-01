@@ -5,7 +5,7 @@
 #include "../targetdevice.hpp"
 
 
-const unsigned int
+const int
     LINE_LIMIT = 18,
     RELAY_LIMIT = 4,
     ADC_LIMIT = 4,

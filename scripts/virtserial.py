@@ -220,7 +220,7 @@ class Serial_FW1(metaclass=MetaSerial):
 
     @handling(KE, SER)
     def get_ser(self):
-        return '#SER,' + TEST_SERIAL_DATA
+        return '#SER,' + SERIAL_DATA
 
     @handling(KE, RST)
     def reset(self):
@@ -283,12 +283,9 @@ def iter_main():
 
     ppid = os.getppid()
     while True:
-        r, w, e = select.select([master], [], [], 1)
-        data = ''
-        if master in r:
-            data = os.read(master, 1000)
-            result = virtser.process(data.decode('ASCII'))
-            os.write(master, (result).encode('ASCII'))
+        data = os.read(master, 1000)
+        result = virtser.process(data.decode('ASCII'))
+        os.write(master, (result).encode('ASCII'))
 
         if ppid:
             try:

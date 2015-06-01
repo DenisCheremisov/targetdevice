@@ -9,30 +9,16 @@
 #include <boost/test/unit_test.hpp>
 
 #include "../targetdevice.hpp"
+#include "drivers.hpp"
 
-BOOST_AUTO_TEST_CASE(test_no_serial_device) {
-    BOOST_REQUIRE_THROW(TargetDeviceDriver a("/some/path/that/does/not/exist"),
+BOOST_AUTO_TEST_CASE(test_no_serial_exists) {
+    BOOST_REQUIRE_THROW(SerialCommunicator a("/some/path/that/does/not/exist"),
                         NoDeviceError);
 }
 
 BOOST_AUTO_TEST_CASE(test_correct_serial_device) {
-    FILE *fp;
-    std::stringstream buf;
-    buf << "python3 scripts/virtserial.py " << getpid();
-    fp = popen(buf.str().c_str(), "r");
-    if(fp == NULL) {
-        throw "Cannot start the virtual serial device";
-    }
-
-    char buffer[2048];
-    fgets(buffer, 2047, fp);
-    fgets(buffer, 2047, fp);
-    int i;
-    for(i = 0; buffer[i] != '\r' && buffer[i] != '\n'; i++);
-    buffer[i] = '\0';
-
-    sleep(1);
-    TargetDeviceDriver driver(buffer);
+    BaseSerialCommunicator *comm = new TestSerialCommunicator();
+    TargetDeviceDriver driver(comm);
 
     BOOST_CHECK(driver.connected());
 

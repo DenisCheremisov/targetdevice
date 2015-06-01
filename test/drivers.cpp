@@ -11,30 +11,13 @@ using namespace std;
 const string STRUCTURE_ERROR = "#ERR";
 
 
-class BaseMatcher {
+class MismatchError: public exception {
 public:
-    ~BaseMatcher() throw() {};
-    virtual bool match(const string &value) = 0;
+    ~MismatchError() throw() {};
 };
 
 
-class ConstMatcher: public BaseMatcher {
-private:
-    string value;
-
-public:
-    ConstMatcher(const string &val) {
-        value = val;
-    }
-    ~ConstMatcher() throw() {};
-
-    bool match(const string &val) {
-        return val == value;
-    }
-};
-
-
-class NumMatcher: public BaseMatcher {
+class NumMatcher {
 private:
     regex *r;
 
@@ -42,12 +25,28 @@ public:
     NumMatcher() {
         r = new regex("[[:digit:]]+");
     }
-    ~NumMatcher() throw() {
+    ~NumMatcher() {
         delete r;
-    };
+    }
+    void match(const string &val) throw(MismatchError) {
+        if(!regex_match(val, *r)) {
+            throw MismatchError();
+        }
+    }
+};
+NumMatcher num_matcher;
 
-    bool match(const string &val) {
-        return regex_match(val, *r);
+
+template <int LOWER, int UPPER>
+class RangeMatcher: public NumMatcher {
+public:
+    int match(const string &val) throw(MismatchError) {
+        num_matcher.match(val);
+        int value = stoi(val);
+        if(!(LOWER <= value && value <= UPPER)) {
+            throw MismatchError();
+        }
+        return value;
     }
 };
 
@@ -210,6 +209,14 @@ string TestSerialCommunicator::reset() {
 }
 
 
+template <class T>
+void expect_length(const T &array, size_t length) throw(MismatchError) {
+    if(array.size() != length) {
+        throw MismatchError();
+    }
+}
+
+
 string TestSerialCommunicator::talk(string req) {
     if(req.size() < 2) {
         return STRUCTURE_ERROR;
@@ -220,11 +227,84 @@ string TestSerialCommunicator::talk(string req) {
 
     auto tokens = unique_ptr<vector<string>>(
         tokenize(req.substr(0, req.size() - 2)));
+    vector<string> &data = *(tokens.get());
     if(tokens->size() < 1) {
         return STRUCTURE_ERROR;
     }
-    if(!ConstMatcher("$KE").match((*(tokens.get()))[0])) {
+
+    string res;
+    try {
+        if(data[0] != "$KE") {
+            throw MismatchError();
+        }
+        if(data.size() == 1) {
+            res = "#OK";
+        } else if(data[1] == "WR") {
+            expect_length(data, 4);
+            auto val1 = RangeMatcher<1, 18>().match(data[2]);
+            auto val2 = RangeMatcher<0, 1>().match(data[3]);
+            res = write_line(val1, val2);
+        } else if(data[1] == "RD"){
+            expect_length(data, 3);
+            if(data[2] == "ALL") {
+                res = read_all_lines();
+            } else {
+                auto val = RangeMatcher<1, 18>().match(data[2]);
+                res = read_line(val);
+            }
+        } else if(data[1] == "IO") {
+            if(data[2] == "GET") {
+                if(data[3] != "MEM" && data[3] != "CUR") {
+                    throw MismatchError();
+                }
+                switch(data.size()) {
+                case 4:
+                    res = ioget_all();
+                    break;
+                case 5: {
+                    auto val = RangeMatcher<1, 18>().match(data[4]);
+                    res = ioget(val);
+                    break;
+                }
+                default:
+                     MismatchError();
+                }
+            } else if(data[2] == "SET") {
+                if(data.size() == 6) {
+                    if(data[5] != "S") {
+                        throw MismatchError();
+                    }
+                } else {
+                    expect_length(data, 5);
+                }
+                auto val1 = RangeMatcher<1, 18>().match(data[3]);
+                auto val2 = RangeMatcher<0, 1>().match(data[4]);
+                res = ioset(val1, val2);
+            } else {
+                throw MismatchError();
+            }
+        } else if(data[1] == "REL") {
+            expect_length(data, 4);
+            auto val1 = RangeMatcher<1, 4>().match(data[2]);
+            auto val2 = RangeMatcher<0, 1>().match(data[3]);
+            res = write_relay(val1, val2);
+        } else if(data[1] == "ADC") {
+            expect_length(data, 3);
+            auto val = RangeMatcher<1, 4>().match(data[2]);
+            res = get_adc(val);
+        } else if(data[1] == "AFR") {
+            expect_length(data, 3);
+            auto val = RangeMatcher<0, 400>().match(data[2]);
+            res = set_freq(val);
+        }
+        if(res == "") {
+            throw MismatchError();
+        }
+    } catch(MismatchError) {
+        return STRUCTURE_ERROR;
+    } catch(...) {
         return STRUCTURE_ERROR;
     }
-    return STRUCTURE_ERROR;
+
+    return res;
 }

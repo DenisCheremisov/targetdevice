@@ -75,7 +75,8 @@ int port_open(const char *portname) {
     if(fd <= 0) {
         return -1;
     }
-    if(set_interface_attribs(fd, B115200, 0) < 0) { // set speed to 115,200 bps, 8n1 (no parity)
+    if(set_interface_attribs(fd, B115200, 0) < 0) {
+        // set speed to 115,200 bps, 8n1 (no parity)
         return 0;
     }
     if(set_blocking(fd, 1) < 0) {// set no blocking
@@ -89,14 +90,14 @@ using namespace std;
 
 
 SerialCommunicator::SerialCommunicator(string path) {
-    this->fd = port_open(file_name.c_str());
+    this->fd = port_open(path.c_str());
     if(this->fd <= 0) {
         throw NoDeviceError(path);
     }
 }
 
 
-SerialCommunicator::~SerialCommunicator() {
+SerialCommunicator::~SerialCommunicator() throw() {
     close(this->fd);
 }
 
@@ -104,20 +105,24 @@ SerialCommunicator::~SerialCommunicator() {
 string SerialCommunicator::talk(string request) {
     const size_t len = request.length();
     ssize_t count;
-    count = write(fd, request.c_str(), len);
+    count = write(this->fd, request.c_str(), len);
     if(count < (int)len) {
         throw TargetDeviceInternalError(request);
     }
     char response_buf[256];
-    count = read(fd, response_buf, 255);
+    count = read(this->fd, response_buf, 255);
     if(count < 3 || count > 255) {
+        cerr << strerror(errno) << endl;
+        cerr << errno << endl;
+        cerr << this->fd << endl;
+        cerr << string(80, '#') << endl;
         throw TargetDeviceInternalError(request);
     }
     return string(response_buf, count);
 }
 
 
-TargetDeviceDriver::TargetDeviceDriver(SerialCommunicator *cm) {
+TargetDeviceDriver::TargetDeviceDriver(BaseSerialCommunicator *cm) {
     this->comm = cm;
 }
 
@@ -140,7 +145,6 @@ void TargetDeviceDriver::port_talk(string request, string &response) {
     }
 
     response = this->comm->talk(request);
-    ssize_t count;
     if(response.substr(0, 4) == "#ERR") {
         throw TargetDeviceOperationError(response);
     }

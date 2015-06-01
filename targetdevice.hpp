@@ -130,11 +130,11 @@ public:
 
 class TargetDeviceDriver {
 protected:
-    SerialCommunicator *comm;
+    BaseSerialCommunicator *comm;
     void port_talk(std::string request, std::string &response);
 
 public:
-    TargetDeviceDriver(SerialCommunicator *comm);
+    TargetDeviceDriver(BaseSerialCommunicator *comm);
     virtual ~TargetDeviceDriver() throw();
 
     bool connected();
