@@ -16,7 +16,8 @@ Drivers::Drivers(const config_drivers_t &conf) {
         it != conf.end(); it++) {
         SerialDriver *driver_conf = dynamic_cast<SerialDriver*>(it->second);
         if(driver_conf != NULL) {
-            serials[it->first] = new TargetDeviceDriver(driver_conf->path());
+            serials[it->first] = new TargetDeviceDriver(
+                new SerialCommunicator(driver_conf->path()));
         }
     }
 }

@@ -5,11 +5,12 @@
 #include "targetdevice.hpp"
 
 class Drivers {
-private:
+protected:
     std::map<std::string, TargetDeviceDriver*> serials;
 
 public:
     virtual ~Drivers() throw();
+    Drivers() {};
     Drivers(const config_drivers_t &conf);
 
     TargetDeviceDriver* serial(std::string driver_name);
