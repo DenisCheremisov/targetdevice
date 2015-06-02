@@ -9,48 +9,14 @@
 #include <boost/algorithm/string/replace.hpp>
 
 #include "../controller.hpp"
+#include "initializer.hpp"
 
 using namespace std;
 
-const char *CONFIG_FILE_NAME = "test_targetdevice.yaml";
+const char *CONFIG_FILE_NAME = "conf/targetdevice.yaml";
 
 
-class ConfigInitializer {
-public:
-    Config* conf;
-    Devices* devices;
-    Drivers *drivers;
-
-    ConfigInitializer() {
-        stringstream buf;
-        buf << "python3 scripts/make_config.py " << getpid();
-        FILE *pp = popen(buf.str().c_str(), "r");
-        if(pp == NULL) {
-            throw "Cannot start virtual serial device";
-        }
-        sleep(1);
-
-        FILE *fp = fopen(CONFIG_FILE_NAME, "r");
-        if(fp == NULL) {
-            perror(CONFIG_FILE_NAME);
-            throw runtime_error(string("Cannot open sample file: ") + CONFIG_FILE_NAME);
-        }
-        std::auto_ptr<YamlParser> parser(YamlParser::get(fp));
-        ConfigStruct rawconf;
-        yaml_parse(parser.get(), &rawconf);
-        conf = Config::get_from_struct(&rawconf);
-
-        drivers = new Drivers(conf->drivers());
-        devices = new Devices(*drivers, conf->devices());
-    };
-
-    ~ConfigInitializer() throw() {
-        delete conf;
-        delete devices;
-        delete drivers;
-    }
-};
-ConfigInitializer init;
+ConfigInitializer init(CONFIG_FILE_NAME);
 
 
 class ConfigResponseConnection: public BaseConnection {
@@ -118,7 +84,7 @@ class InstrResponseConnection: public BaseConnection {
             "ID=0xfff3:TYPE=VALUE:COMMAND=boiler.temperature\n"
             "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
             "ID=2:TYPE=COUPLED:NAME=2:COMMAND=boiler.on:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
-            "ID=3:TYPE=CONDITION:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
+            "ID=3:TYPE=CONDITIONED:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
 
         stringstream buf;
         buf << time(NULL) + 4000;

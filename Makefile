@@ -77,8 +77,8 @@ test_model: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o 
 test_network: network.o test/test_network.cpp
 	$(COMPILE) -o test_network network.o test/test_network.cpp $(TESTFLAGS) -lssl -lcrypto
 
-test_controller: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o yamlparser.o test/test_controller.cpp
-	$(COMPILE) -o test_controller runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o yamlparser.o test/test_controller.cpp $(TESTFLAGS) -lyaml -lssl -lcrypto
+test_controller: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o yamlparser.o test_initializer.o test_drivers.o test/test_controller.cpp
+	$(COMPILE) -o test_controller runtime.o confbind.o targetdevice.o confparser.o model.o commands.o controller.o network.o yamlparser.o test_initializer.o test_drivers.o test/test_controller.cpp $(TESTFLAGS) -lyaml -lssl -lcrypto
 
 test_yamlparser: test/test_yamlparser.cpp yamlparser.o
 	$(COMPILE) -o test_yamlparser test/test_yamlparser.cpp yamlparser.o $(TESTFLAGS) -lyaml
