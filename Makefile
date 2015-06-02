@@ -47,6 +47,9 @@ prepare:
 test_tdevice: targetdevice.o test/tdevice.cpp
 	$(COMPILE) -o test_tdevice targetdevice.o test/tdevice.cpp $(TESTFLAGS)
 
+test_initializer.o: test/initializer.cpp
+	$(COMPILE) -std=c++11 -o test_initializer.o -c test/initializer.cpp
+
 test_drivers.o: test/drivers.cpp
 	$(COMPILE) -std=c++11 -o test_drivers.o -c test/drivers.cpp
 
@@ -68,8 +71,8 @@ test_confbind: confbind.o targetdevice.o confparser.o yamlparser.o test/test_con
 test_commands: commands.o confbind.o targetdevice.o confparser.o test/test_commands.cpp
 	$(COMPILE) -o test_commands confbind.o targetdevice.o confparser.o commands.o test/test_commands.cpp $(TESTFLAGS) -lyaml -lpthread
 
-test_model: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o yamlparser.o test/test_model.cpp
-	$(COMPILE) -o test_model runtime.o commands.o model.o confbind.o targetdevice.o confparser.o yamlparser.o test/test_model.cpp $(TESTFLAGS) -lyaml
+test_model: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o yamlparser.o test_initializer.o test_drivers.o test/test_model.cpp
+	$(COMPILE) -o test_model runtime.o commands.o model.o confbind.o targetdevice.o confparser.o yamlparser.o test_initializer.o test_drivers.o test/test_model.cpp $(TESTFLAGS) -lyaml
 
 test_network: network.o test/test_network.cpp
 	$(COMPILE) -o test_network network.o test/test_network.cpp $(TESTFLAGS) -lssl -lcrypto
