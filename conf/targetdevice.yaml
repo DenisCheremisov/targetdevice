@@ -3,14 +3,14 @@ daemon:
   pidfile: targetdevice.pid
 
 connection:
-  host: localhost
+  host: 192.168.1.102
   port: 10023
   identity: client_001
 
 drivers:
   targetdevice:
     type: serial
-    path: /dev/pts/2
+    path: /dev/pts/3
 
 devices:
   boiler:

@@ -288,6 +288,10 @@ string TestSerialCommunicator::talk(string req) {
             auto val1 = RangeMatcher<1, 4>().match(data[2]);
             auto val2 = RangeMatcher<0, 1>().match(data[3]);
             res = write_relay(val1, val2);
+        } else if(data[1] == "RID") {
+            expect_length(data,3);
+            auto val1 = RangeMatcher<1, 4>().match(data[2]);
+            res = read_relay(val1);
         } else if(data[1] == "ADC") {
             expect_length(data, 3);
             auto val = RangeMatcher<1, 4>().match(data[2]);

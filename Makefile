@@ -1,4 +1,4 @@
-CPP=g++
+CPP=clang++
 LDFLAGS=
 IFLAGS=
 OPTS=-g -O0 -Wall -Werror -pedantic
@@ -68,8 +68,8 @@ test_runtime: runtime.o test/test_runtime.cpp
 test_confbind: confbind.o targetdevice.o confparser.o yamlparser.o test/test_confbind.cpp
 	$(COMPILE) -o test_confbind confbind.o targetdevice.o confparser.o yamlparser.o test/test_confbind.cpp $(TESTFLAGS) -lyaml
 
-test_commands: commands.o confbind.o targetdevice.o confparser.o test/test_commands.cpp
-	$(COMPILE) -o test_commands confbind.o targetdevice.o confparser.o commands.o test/test_commands.cpp $(TESTFLAGS) -lyaml -lpthread
+test_commands: commands.o confbind.o targetdevice.o confparser.o test_initializer.o test_drivers.o confparser.o yamlparser.o test/test_commands.cpp
+	$(COMPILE) -o test_commands confbind.o targetdevice.o confparser.o commands.o test_initializer.o yamlparser.o test_drivers.o test/test_commands.cpp $(TESTFLAGS) -lyaml -lpthread
 
 test_model: runtime.o confbind.o targetdevice.o confparser.o model.o commands.o yamlparser.o test_initializer.o test_drivers.o test/test_model.cpp
 	$(COMPILE) -o test_model runtime.o commands.o model.o confbind.o targetdevice.o confparser.o yamlparser.o test_initializer.o test_drivers.o test/test_model.cpp $(TESTFLAGS) -lyaml

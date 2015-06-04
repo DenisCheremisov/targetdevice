@@ -12,41 +12,31 @@
 
 #include "../confbind.hpp"
 #include "../commands.hpp"
+#include "initializer.hpp"
 
 using namespace std;
 
-const char *CONFIG_FILE_NAME = "test_targetdevice.yaml";
+const char *CONFIG_FILE_NAME = "conf/targetdevice.yaml";
+
+ConfigInitializer init(CONFIG_FILE_NAME);
 
 
 BOOST_AUTO_TEST_CASE(test_driver_creation) {
-    FILE *pp;
-    stringstream buf;
-    buf << "python3 scripts/make_config.py " << getpid();
-    pp = popen(buf.str().c_str(), "r");
-    if(pp == NULL) {
-        throw "Cannot start the virtual serial device";
-    }
-    sleep(1);
-
-    FILE *fp = fopen(CONFIG_FILE_NAME, "r");
-    if(fp == NULL) {
-        perror(CONFIG_FILE_NAME);
-        throw runtime_error(string("Cannot open sample file: ") + CONFIG_FILE_NAME);
-    }
-    auto_ptr<MapElement> res(dynamic_cast<MapElement*>(raw_conf_parse(fp)));
-    auto_ptr<Config> conf(config_parse(res.get()));
-
-    Drivers drivers(conf->drivers());
-    Devices devices(drivers, conf->devices());
+    Drivers &drivers = *init.drivers;
+    Devices &devices = *init.devices;
 
     Result *r;
 
+    BOOST_CHECK_EQUAL(drivers.serial("targetdevice")->relay_get(2), 0);
     r = SwitcherOn(devices.device("switcher")).execute();
     BOOST_CHECK_EQUAL(r->value().c_str(), "1");
+    BOOST_CHECK_EQUAL(drivers.serial("targetdevice")->relay_get(2), 1);
+
     delete r;
 
     r = SwitcherOff(devices.device("switcher")).execute();
     BOOST_CHECK_EQUAL(r->value().c_str(), "1");
+    BOOST_CHECK_EQUAL(drivers.serial("targetdevice")->relay_get(2), 0);
     delete r;
 
     r = TemperatureGet(devices.device("temperature")).execute();

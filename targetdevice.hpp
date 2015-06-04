@@ -144,6 +144,7 @@ public:
     void line_set(int line, int value);
 
     void relay_set(int relay, int value);
+    int relay_get(int relay);
 
     int io_get(int line);
     std::string io_get_all();

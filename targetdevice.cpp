@@ -268,6 +268,35 @@ void TargetDeviceDriver::relay_set(int relayno, int value) {
 }
 
 
+int TargetDeviceDriver::relay_get(int relayno) {
+    stringstream buf;
+    if(relayno < RELAY_LOWER_BOUND || relayno > RELAY_UPPER_BOUND) {
+        buf << "Relay number out of bounds 1..4: " << relayno;
+        throw TargetDeviceValidationError(buf.str());
+    }
+
+    buf << "$KE,RID," << relayno << "\r\n";
+
+    string command = buf.str();
+    string response;
+    this->port_talk(command, response);
+
+    istringstream parse_buf(response);
+    string token;
+    if(!getline(parse_buf, token, ',') || token != "#RID") {
+        throw TargetDeviceValidationError(response);
+    }
+    if(!getline(parse_buf, token, ',')) {
+        throw TargetDeviceOperationError(response);
+    }
+    if(getline(parse_buf, token, ',')) {
+        return atol(token.c_str());
+    } else {
+        throw TargetDeviceOperationError(response);
+    }
+}
+
+
 int TargetDeviceDriver::io_get(int lineno) {
     stringstream buf;
     if(lineno < LINE_LOWER_BOUND || lineno > LINE_UPPER_BOUND) {

@@ -11,10 +11,10 @@ public:
 
 class ConfigInitializer {
 public:
-    Config* conf;
-    Devices* devices;
+    Config *conf;
+    Devices *devices;
     Drivers *drivers;
 
     ConfigInitializer(const char *config_file_name);
-    virtual ~ConfigInitializer();
+    virtual ~ConfigInitializer() throw();
 };
