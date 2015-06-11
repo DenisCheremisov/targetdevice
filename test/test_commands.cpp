@@ -28,9 +28,11 @@ BOOST_AUTO_TEST_CASE(test_driver_creation) {
     Result *r;
 
     BOOST_CHECK_EQUAL(drivers.serial("targetdevice")->relay_get(2), 0);
-    r = SwitcherOn(devices.device("switcher")).execute();
+    SwitcherOn *swon = new SwitcherOn(devices.device("switcher"));
+    r = swon->execute();
     BOOST_CHECK_EQUAL(r->value().c_str(), "1");
     BOOST_CHECK_EQUAL(drivers.serial("targetdevice")->relay_get(2), 1);
+    delete swon;
 
     delete r;
 

@@ -22,7 +22,7 @@ class SwitcherOn: public Command {
 private:
     DeviceSwitcher *device;
 public:
-    ~SwitcherOn() throw() {};
+    ~SwitcherOn() throw();
     SwitcherOn(device_reference_t *ref);
 
     Result *execute() throw();

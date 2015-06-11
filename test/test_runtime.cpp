@@ -12,17 +12,6 @@
 using namespace std;
 
 
-class TestCommand: public Command {
-public:
-    static int counter;
-
-    Result *execute() throw() {
-        return new IntResult(TestCommand::counter++);
-    }
-};
-int TestCommand::counter = 0;
-
-
 class TestCommand2: public Command {
 public:
     static int counter;
@@ -32,6 +21,21 @@ public:
     }
 };
 int TestCommand2::counter = 0;
+
+
+class TestCommand: public Command {
+public:
+    static int counter;
+
+    ~TestCommand() throw() {
+        TestCommand2::counter++;
+    }
+
+    Result *execute() throw() {
+        return new IntResult(TestCommand::counter++);
+    }
+};
+int TestCommand::counter = 0;
 
 
 time_t future() {
@@ -478,7 +482,7 @@ BOOST_AUTO_TEST_CASE(test_general_schedule) {
     exec = new Executor(nores);
     delete exec->execute();
     BOOST_CHECK_EQUAL(TestCommand::counter, 12*3 + 6*3);
-    BOOST_CHECK_EQUAL(TestCommand2::counter, 6);
+    BOOST_CHECK_EQUAL(TestCommand2::counter, 24);
     delete exec;
     delete nores;
 

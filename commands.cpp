@@ -11,6 +11,15 @@ SwitcherOn::SwitcherOn(device_reference_t *ref) {
 }
 
 
+SwitcherOn::~SwitcherOn() throw() {
+    try {
+        Locker<DeviceSwitcher, TargetDeviceDriver> cover(device);
+        cover->turn_off();
+    } catch(...) {
+    }
+}
+
+
 SwitcherOff::SwitcherOff(device_reference_t *ref) {
     device = dynamic_cast<DeviceSwitcher*>(ref->basepointer);
     if(device == NULL) {
@@ -46,6 +55,8 @@ Result *SwitcherOn::execute() throw() {
                                error.what());
     }
 }
+
+
 
 
 Result *SwitcherOff::execute() throw() {
