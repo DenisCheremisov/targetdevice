@@ -59,6 +59,11 @@ public:
         }
         conf = Config::get_from_struct(&rawconf);
 
+        // Setting up config file last change timestamp
+        struct stat buffer;
+        stat(config_file_name, &buffer);
+        Config::conf_change = (time_t)buffer.st_mtim.tv_sec;
+
         drivers = new Drivers(conf->drivers());
         devices = new Devices(*drivers, conf->devices());
         sched = new NamedSchedule;
