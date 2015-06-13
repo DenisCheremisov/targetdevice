@@ -526,7 +526,8 @@ string InstructionListModel::execute(model_call_params_t &params)
                     buf << "No task name=" << ref[NAME] << " found to drop it";
                     error_results << resp_item(ref[ID], false, buf.str());
                 } else {
-                    params.sched->drop_schedule(ref[NAME]);
+                    UnifiedLocker<NamedSchedule> safe(params.sched);
+                    safe->drop_schedule(ref[NAME]);
                     for(auto &it: params.busy->at(ref[NAME])) {
                         resources->release(it);
                     }
@@ -586,10 +587,10 @@ string InstructionListModel::execute(model_call_params_t &params)
     }
 
     {
-        UnifiedLocker<BaseSchedule> safe(params.sched);
+        UnifiedLocker<NamedSchedule> safe(params.sched);
         for(safe_map<string, BaseSchedule>::iterator it = res.begin();
             it != res.end(); it++) {
-            params.sched->set_schedule(it->first, it->second);
+            safe->set_schedule(it->first, it->second);
             it->second = NULL;
         }
     }

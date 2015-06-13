@@ -11,7 +11,7 @@ void* background_worker(void *args) {
         Commands *commands;
         {
             time_t now = time(NULL);
-            UnifiedLocker<BaseSchedule> safe(sched);
+            UnifiedLocker<NamedSchedule> safe(sched);
             commands = safe->get_commands(now);
         }
 
