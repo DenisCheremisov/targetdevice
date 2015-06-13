@@ -149,6 +149,7 @@ public:
     virtual ~NamedSchedule() throw();
     Commands *get_commands(time_t tm);
     NamedSchedule& set_schedule(std::string name, BaseSchedule *sched);
+    void drop_schedule(std::string name);
     bool is_expired();
 };
 

@@ -4,6 +4,7 @@
 #include "confbind.hpp"
 #include "commands.hpp"
 #include "runtime.hpp"
+#include "resourcemanager.hpp"
 
 
 class InteruptionHandling: public std::string {
@@ -16,6 +17,8 @@ struct model_call_params_t {
     Config *config;
     Devices *devices;
     NamedSchedule *sched;
+    Resources *res;
+    std::map<std::string, std::list<std::string> > *busy;
     std::string request_data;
 };
 

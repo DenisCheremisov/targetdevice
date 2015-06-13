@@ -379,7 +379,7 @@ public:
 
 BaseSchedule *get_single(model_call_params_t &params,
                          SingleInstructionLine *item) {
-    auto_ptr<Command> cmd(command_from_string(params, item->command));
+    unique_ptr<Command> cmd(command_from_string(params, item->command));
     BaseSchedule *res =  new SingleCommandSchedule(
         cmd.get(), item->start, item->stop, item->restart);
     cmd.release();
@@ -389,8 +389,8 @@ BaseSchedule *get_single(model_call_params_t &params,
 
 BaseSchedule *get_coupled(model_call_params_t &params,
                           CoupledInstructionLine *item) {
-    auto_ptr<Command> cmd(command_from_string(params, item->command));
-    auto_ptr<Command> couple(command_from_string(params, item->couple));
+    unique_ptr<Command> cmd(command_from_string(params, item->command));
+    unique_ptr<Command> couple(command_from_string(params, item->couple));
     BaseSchedule *res = new CoupledCommandSchedule(
         cmd.get(), item->start, item->stop,
         couple.get(), item->coupling_interval,
@@ -403,7 +403,7 @@ BaseSchedule *get_coupled(model_call_params_t &params,
 
 BaseSchedule* get_conditioned(model_call_params_t &params,
                               ConditionInstructionLine *item) {
-    auto_ptr<BaseCondition> cond;
+    unique_ptr<BaseCondition> cond;
     try {
         device_reference_t *devref = params.devices->device(
             item->comparison.source);
@@ -435,7 +435,7 @@ BaseSchedule* get_conditioned(model_call_params_t &params,
         default:
             comparator = compare_lt<double>;
         }
-        cond = auto_ptr<BaseCondition>(
+        cond = unique_ptr<BaseCondition>(
             new TemperatureCondition(dvc, item->comparison.value, comparator));
     } catch(out_of_range e) {
         stringstream buf;
@@ -443,8 +443,8 @@ BaseSchedule* get_conditioned(model_call_params_t &params,
         throw InteruptionHandling(buf.str());
     }
 
-    auto_ptr<Command> cmd(command_from_string(params, item->command));
-    auto_ptr<Command> couple(command_from_string(params, item->couple));
+    unique_ptr<Command> cmd(command_from_string(params, item->command));
+    unique_ptr<Command> couple(command_from_string(params, item->couple));
 
     BaseSchedule *res = new ConditionedSchedule(
         cmd.release(), couple.release(), cond.release(),
@@ -474,24 +474,64 @@ string InstructionListModel::execute(model_call_params_t &params)
     safe_vector<SingleInstructionLine> singles;
     safe_vector<CoupledInstructionLine> couples;
     safe_vector<ConditionInstructionLine> conditionals;
+    auto resources = params.res;
 
-    stringstream results, error_results;
+    stringstream results, error_results, drop_results;
     while(getline(buf, line, '\n')) {
         s_map ref;
         BaseInstructionLine::deconstruct(line, ref);
-
         try {
             key_required(ref, TYPE);
+            key_required(ref, ID);
             string type = ref[TYPE];
-
+            auto &&it = params.sched->find(ref[NAME]);
+            if(it != params.sched->end() && type != "DROP") {
+                stringstream buf;
+                buf << "Task name=" << ref[NAME] << " has taken up already, may be drop it?";
+                throw InteruptionHandling(buf.str());
+            }
             if(type == "VALUE") {
+                unique_ptr<ResourcesTaker> taker(resources->taker());
+                key_required(ref, COMMAND);
+                taker->take(ref[COMMAND]);
                 values.push_back(new ValueInstructionLine(ref));
+                taker->approve();
             } else if(type == "SINGLE") {
+                unique_ptr<ResourcesTaker> taker(resources->taker());
+                taker->take(ref[COMMAND]);
+                (*params.busy)[ref[NAME]] = taker->captured();
                 singles.push_back(new SingleInstructionLine(ref));
+                taker->approve();
             } else if(type == "COUPLED") {
+                unique_ptr<ResourcesTaker> taker(resources->taker());
+                key_required(ref, COMMAND);
+                key_required(ref, COUPLE);
+                taker->take(ref[COMMAND]);
+                taker->take(ref[COUPLE]);
+                (*params.busy)[ref[NAME]] = taker->captured();
                 couples.push_back(new CoupledInstructionLine(ref));
+                taker->approve();
             } else if(type == "CONDITIONED") {
+                unique_ptr<ResourcesTaker> taker(resources->taker());
+                key_required(ref, COMMAND);
+                key_required(ref, COUPLE);
+                taker->take(ref[COMMAND]);
+                taker->take(ref[COUPLE]);
+                (*params.busy)[ref[NAME]] = taker->captured();
                 conditionals.push_back(new ConditionInstructionLine(ref));
+                taker->approve();
+            } else if(type == "DROP") {
+                if(it == params.sched->end()) {
+                    stringstream buf;
+                    buf << "No task name=" << ref[NAME] << " found to drop it";
+                    error_results << resp_item(ref[ID], false, buf.str());
+                } else {
+                    params.sched->drop_schedule(ref[NAME]);
+                    for(auto &it: params.busy->at(ref[NAME])) {
+                        resources->release(it);
+                    }
+                    drop_results << resp_item(ref[ID], true, "dropped") << "\n";
+                }
             }
         } catch(InteruptionHandling e) {
             string id;
@@ -501,6 +541,10 @@ string InstructionListModel::execute(model_call_params_t &params)
                 id = "VOID";
             }
             error_results << resp_item(id, false, e) << endl;
+        } catch(ResourceIsBusy e) {
+            stringstream buf;
+            buf << "Unable to take resource " << e.what() << "\n";
+            error_results << resp_item(ref[ID], false, buf.str());
         }
     }
 
@@ -554,8 +598,8 @@ string InstructionListModel::execute(model_call_params_t &params)
         it != values.end(); it++) {
         ValueInstructionLine *item = *it;
         try {
-            auto_ptr<Command> cmd(command_from_string(params, item->command));
-            auto_ptr<Result> value(cmd->execute());
+            unique_ptr<Command> cmd(command_from_string(params, item->command));
+            unique_ptr<Result> value(cmd->execute());
             if(dynamic_cast<ErrorResult*>(value.get())) {
                 results << resp_item(item->id, false, value->value());
             } else {
@@ -568,6 +612,7 @@ string InstructionListModel::execute(model_call_params_t &params)
     }
 
     stringstream result_buf;
+    result_buf << drop_results.str();
     result_buf << results.str();
     result_buf << error_results.str();
     return result_buf.str();

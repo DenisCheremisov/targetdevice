@@ -27,6 +27,7 @@ BOOST_AUTO_TEST_CASE(test_config_get) {
     params.config = init.conf;
     params.devices = init.devices;
     params.request_data = "GET";
+    params.res = init.resources;
 
     BOOST_CHECK_EQUAL(config_info.execute(params),
                       "boiler:boiler\n"
@@ -58,13 +59,13 @@ BOOST_AUTO_TEST_CASE(test_value_instruction) {
     s_map nref;
     BaseInstructionLine::deconstruct("ID=1", nref);
     BOOST_REQUIRE_THROW(
-                  auto_ptr<BaseInstructionLine>(new ValueInstructionLine(nref)),
+                  unique_ptr<BaseInstructionLine>(new ValueInstructionLine(nref)),
                   InteruptionHandling);
 
     s_map nnref;
     BaseInstructionLine::deconstruct("COMMAND=nova", nnref);
     BOOST_REQUIRE_THROW(
-                 auto_ptr<BaseInstructionLine>(new ValueInstructionLine(nnref)),
+                 unique_ptr<BaseInstructionLine>(new ValueInstructionLine(nnref)),
                  InteruptionHandling);
 }
 
@@ -130,7 +131,7 @@ BOOST_AUTO_TEST_CASE(test_single_instruction) {
     for(int i = 0; i < LENGTH; i++) {
         ref.clear();
         BaseInstructionLine::deconstruct((char*)wrong_instrs[i], ref);
-        BOOST_REQUIRE_THROW(auto_ptr<SingleInstructionLine>(
+        BOOST_REQUIRE_THROW(unique_ptr<SingleInstructionLine>(
                                new SingleInstructionLine(ref)),
                             InteruptionHandling);
     }
@@ -164,7 +165,7 @@ BOOST_AUTO_TEST_CASE(test_couple_instruction) {
     for(int i = 0; i < LENGTH; i++) {
         ref.clear();
         BaseInstructionLine::deconstruct((char*)wrong_instrs[i], ref);
-        BOOST_REQUIRE_THROW(auto_ptr<CoupledInstructionLine>(
+        BOOST_REQUIRE_THROW(unique_ptr<CoupledInstructionLine>(
                                new CoupledInstructionLine(ref)),
                             InteruptionHandling);
     }
@@ -274,7 +275,7 @@ BOOST_AUTO_TEST_CASE(test_conditioned_instruction) {
     for(int i = 0; i < LENGTH; i++) {
         ref.clear();
         BaseInstructionLine::deconstruct((char*)wrong_instrs[i], ref);
-        BOOST_REQUIRE_THROW(auto_ptr<CoupledInstructionLine>(
+        BOOST_REQUIRE_THROW(unique_ptr<CoupledInstructionLine>(
                                new CoupledInstructionLine(ref)),
                             InteruptionHandling);
     }
@@ -299,36 +300,36 @@ BOOST_AUTO_TEST_CASE(test_command_generation) {
     params.request_data =
         "ID=1:TYPE=value:COMMAND=switcher.on";
 
-    auto_ptr<Command> cmd1(command_from_string(params, "switcher.on"));
+    unique_ptr<Command> cmd1(command_from_string(params, "switcher.on"));
     BOOST_CHECK(dynamic_cast<SwitcherOn*>(cmd1.get()) != NULL);
 
-    auto_ptr<Command> cmd2(command_from_string(params, "switcher.off"));
+    unique_ptr<Command> cmd2(command_from_string(params, "switcher.off"));
     BOOST_CHECK(dynamic_cast<SwitcherOff*>(cmd2.get()) != NULL);
 
-    auto_ptr<Command> cmd3(command_from_string(params,
+    unique_ptr<Command> cmd3(command_from_string(params,
                                                "temperature.temperature"));
     BOOST_CHECK(dynamic_cast<TemperatureGet*>(cmd3.get()) != NULL);
 
-    auto_ptr<Command> cmd4(command_from_string(params, "boiler.on"));
+    unique_ptr<Command> cmd4(command_from_string(params, "boiler.on"));
     BOOST_CHECK(dynamic_cast<SwitcherOn*>(cmd4.get()) != NULL);
 
-    auto_ptr<Command> cmd5(command_from_string(params, "boiler.off"));
+    unique_ptr<Command> cmd5(command_from_string(params, "boiler.off"));
     BOOST_CHECK(dynamic_cast<SwitcherOff*>(cmd5.get()) != NULL);
 
     BOOST_REQUIRE_THROW(
-        auto_ptr<Command>(command_from_string(params, "boiler.of")),
+        unique_ptr<Command>(command_from_string(params, "boiler.of")),
         InteruptionHandling);
 
     BOOST_REQUIRE_THROW(
-        auto_ptr<Command>(command_from_string(params, "switcher.temperature")),
+        unique_ptr<Command>(command_from_string(params, "switcher.temperature")),
         InteruptionHandling);
 
     BOOST_REQUIRE_THROW(
-        auto_ptr<Command>(command_from_string(params, "ah.temperature")),
+        unique_ptr<Command>(command_from_string(params, "ah.temperature")),
         InteruptionHandling);
 
     BOOST_REQUIRE_THROW(
-        auto_ptr<Command>(command_from_string(params, "ah")),
+        unique_ptr<Command>(command_from_string(params, "ah")),
         InteruptionHandling);
 }
 
@@ -351,7 +352,7 @@ BOOST_AUTO_TEST_CASE(test_conditioned_schedule_getting) {
     BaseInstructionLine::deconstruct(buf.str(), ref);
     ConditionInstructionLine instr(ref);
 
-    auto_ptr<BaseSchedule> cond_sched(get_conditioned(params, &instr));
+    unique_ptr<BaseSchedule> cond_sched(get_conditioned(params, &instr));
     BOOST_CHECK(dynamic_cast<ConditionedSchedule*>(cond_sched.get()) !=
                 (BaseSchedule*)NULL);
 
@@ -385,7 +386,7 @@ BOOST_AUTO_TEST_CASE(test_coupled_schedule_getting) {
     BaseInstructionLine::deconstruct(buf.str(), ref);
     CoupledInstructionLine instr(ref);
 
-    auto_ptr<BaseSchedule> cond_sched(get_coupled(params, &instr));
+    unique_ptr<BaseSchedule> cond_sched(get_coupled(params, &instr));
     BOOST_CHECK(dynamic_cast<CoupledCommandSchedule*>(cond_sched.get()) !=
                 (BaseSchedule*)NULL);
 
@@ -420,7 +421,7 @@ BOOST_AUTO_TEST_CASE(test_single_schedule_getting) {
     BaseInstructionLine::deconstruct(buf.str(), ref);
     SingleInstructionLine instr(ref);
 
-    auto_ptr<BaseSchedule> cond_sched(get_single(params, &instr));
+    unique_ptr<BaseSchedule> cond_sched(get_single(params, &instr));
     BOOST_CHECK(dynamic_cast<SingleCommandSchedule*>(cond_sched.get()) !=
                 (BaseSchedule*)NULL);
 
@@ -439,10 +440,13 @@ BOOST_AUTO_TEST_CASE(test_single_schedule_getting) {
 
 BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
     model_call_params_t params;
-    auto_ptr<NamedSchedule> sched(new NamedSchedule());
+    unique_ptr<NamedSchedule> sched(new NamedSchedule());
+    unique_ptr<map<string, list<string> > > busy(new map<string, list<string> >);
     params.config = init.conf;
     params.devices = init.devices;
     params.sched = sched.get();
+    params.res = init.resources;
+    params.busy = busy.get();
 
     string req =
         "ID=0xfff0:TYPE=VALUE:COMMAND=temperature.temperature\n"
@@ -450,9 +454,8 @@ BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
         "ID=0xfff2:TYPE=VALUE:COMMAND=boiler.temperature\n"
         "ID=0xfff3:TYPE=VALUE:COMMAND=boiler.temperature\n"
         "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
-        "ID=2:TYPE=COUPLED:NAME=2:COMMAND=boiler.on:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
-        "ID=3:TYPE=CONDITIONED:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
-        ;
+        "ID=2:TYPE=COUPLED:NAME=2:COMMAND=switcher.on:COUPLE=switcher.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n";
+        //
     stringstream buf;
     buf << time(NULL) + 4000;
     boost::replace_all(req, "replaceit", buf.str());
@@ -462,29 +465,51 @@ BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
     BOOST_CHECK_EQUAL(model.execute(params),
                       "ID=1:SUCCESS=1:VALUE=OK\n"
                       "ID=2:SUCCESS=1:VALUE=OK\n"
-                      "ID=3:SUCCESS=1:VALUE=OK\n"
+                      // "ID=3:SUCCESS=1:VALUE=OK\n"
                       "ID=0xfff0:SUCCESS=1:VALUE=0\n"
                       "ID=0xfff1:SUCCESS=1:VALUE=0.00488759\n"
                       "ID=0xfff2:SUCCESS=1:VALUE=0\n"
                       "ID=0xfff3:SUCCESS=1:VALUE=0.00488759\n"
                       );
 
-    BOOST_CHECK_EQUAL(params.sched->size(), 3);
-    BOOST_CHECK(dynamic_cast<SingleCommandSchedule*>((*params.sched)["1"])
+    BOOST_CHECK_EQUAL(params.sched->size(), 2);
+    BOOST_CHECK(dynamic_cast<SingleCommandSchedule*>((*params.sched).at("1"))
                 != NULL);
-    BOOST_CHECK(dynamic_cast<CoupledCommandSchedule*>((*params.sched)["2"])
+    BOOST_CHECK(dynamic_cast<CoupledCommandSchedule*>((*params.sched).at("2"))
                 != NULL);
-    BOOST_CHECK(dynamic_cast<ConditionedSchedule*>((*params.sched)["3"])
+
+    req =
+        "ID=10:NAME=1:TYPE=DROP\n"
+        "ID=3:TYPE=CONDITIONED:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50\n";
+    buf.clear();
+    buf << time(NULL) + 4000;
+    boost::replace_all(req, "replaceit", buf.str());
+    params.request_data = req;
+    BOOST_CHECK_EQUAL(model.execute(params),
+                      "ID=10:SUCCESS=1:VALUE=dropped\n"
+                      "ID=3:SUCCESS=1:VALUE=OK\n");
+    BOOST_CHECK_EQUAL(params.sched->size(), 2);
+    BOOST_CHECK(dynamic_cast<CoupledCommandSchedule*>((*params.sched).at("2"))
+                != NULL);
+    BOOST_CHECK(dynamic_cast<ConditionedSchedule*>((*params.sched).at("3"))
                 != NULL);
 }
 
 
 BOOST_AUTO_TEST_CASE(test_wrong_instruction_list_model) {
     model_call_params_t params;
-    auto_ptr<NamedSchedule> sched(new NamedSchedule());
+    unique_ptr<NamedSchedule> sched(new NamedSchedule());
+    unique_ptr<map<string, list<string> > > busy(new map<string, list<string> >);
     params.config = init.conf;
     params.devices = init.devices;
     params.sched = sched.get();
+    params.res = init.resources;
+    params.busy = busy.get();
+
+    params.res->release("boiler.on");
+    params.res->release("boiler.off");
+    params.res->release("switcher.on");
+    params.res->release("switcher.off");
 
     string req =
         "ID=0xfff1:TYPE=VALUE:COMMAND=temperature.on\n"
@@ -498,10 +523,11 @@ BOOST_AUTO_TEST_CASE(test_wrong_instruction_list_model) {
     params.request_data = req;
 
     InstructionListModel model;
+    string res = model.execute(params);
     BOOST_CHECK_EQUAL(
-        model.execute(params),
+        res,
         "ID=1:SUCCESS=1:VALUE=OK\n"
-        "ID=3:SUCCESS=1:VALUE=OK\n"
         "ID=0xfff1:SUCCESS=0:ERROR=Device \"temperature\" does not support operation \"on\"\n"
-        "ID=2:SUCCESS=0:ERROR=Key COMMAND required\n");
+        "ID=2:SUCCESS=0:ERROR=Key COMMAND required\n"
+        "ID=3:SUCCESS=0:ERROR=Unable to take resource boiler.on\n");
 }

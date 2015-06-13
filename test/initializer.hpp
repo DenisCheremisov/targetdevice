@@ -1,4 +1,5 @@
 #include "../confbind.hpp"
+#include "../resourcemanager.hpp"
 
 
 
@@ -14,6 +15,7 @@ public:
     Config *conf;
     Devices *devices;
     Drivers *drivers;
+    Resources *resources;
 
     ConfigInitializer(const char *config_file_name);
     virtual ~ConfigInitializer() throw();

@@ -97,6 +97,15 @@ NamedSchedule& NamedSchedule::set_schedule(string name, BaseSchedule *sched) {
 }
 
 
+void NamedSchedule::drop_schedule(string name) {
+    NamedSchedule::iterator it = this->find(name);
+    if(it != this->end()) {
+        delete it->second;
+    }
+    (*this).erase(name);
+}
+
+
 bool NamedSchedule::is_expired() {
     int not_expired_counter = 0;
 

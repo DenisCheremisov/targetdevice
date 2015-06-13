@@ -1,6 +1,6 @@
 daemon:
-  logfile: targetdevice.log
-  pidfile: targetdevice.pid
+  logfile: /var/log/tdevice.log
+  pidfile: /var/run/tdevice.pid
 
 connection:
   host: 192.168.1.102
@@ -10,7 +10,7 @@ connection:
 drivers:
   targetdevice:
     type: serial
-    path: /dev/pts/3
+    path: /dev/pts/2
 
 devices:
   boiler:

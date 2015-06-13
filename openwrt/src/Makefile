@@ -37,9 +37,12 @@ controller.o: controller.cpp controller.hpp
 yamlparser.o: yamlparser.cpp yamlparser.hpp
 	$(COMPILE) -c yamlparser.cpp
 
+resourcemanager.o: resourcemanager.cpp
+	$(COMPILE) -std=c++11 -c resourcemanager.cpp
 
-$(BINARY): main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o yamlparser.o
-	$(CXX) $(CFLAGS) $(LDFLAGS) $(WFLAGS) -o $(BINARY) main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o yamlparser.o -lyaml -lssl -lcrypto -lpthread
+
+$(BINARY): main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o yamlparser.o resourcemanager.o
+	$(CXX) $(CFLAGS) $(LDFLAGS) $(WFLAGS) -o $(BINARY) main.cpp targetdevice.o confparser.o runtime.o confbind.o commands.o background.o model.o network.o controller.o yamlparser.o resourcemanager.o -lyaml -lssl -lcrypto -lpthread
 
 clean:
 	rm -f $(BINARY) *.o

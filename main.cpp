@@ -24,6 +24,7 @@
 #include "runtime.hpp"
 #include "background.hpp"
 #include "controller.hpp"
+#include "resourcemanager.hpp"
 
 
 using namespace std;
@@ -37,6 +38,7 @@ public:
     Devices* devices;
     Drivers *drivers;
     NamedSchedule *sched;
+    Resources *resources;
 
     GlobalDataInitializer(const char *config_file_name) {
         FILE *fp = fopen(config_file_name, "r");
@@ -56,6 +58,23 @@ public:
         } catch(ParserError e) {
             cerr << e.what() << endl;
             exit(-1);
+        }
+        // Setting up resources
+        resources = new Resources;
+        for(DevicesStruct::iterator it = rawconf.devices.begin();
+            it != rawconf.devices.end(); it++) {
+            SerialDeviceStruct *device = dynamic_cast<SerialDeviceStruct*>(
+                it->second);
+            if(device == NULL) {
+                continue;
+            }
+            if(device->type.value == "switcher") {
+                resources->add_resource(it->first + ".on", it->first);
+                resources->add_resource(it->first + ".off", it->first);
+            } else if(device->type.value == "boiler") {
+                resources->add_resource(it->first + ".on", it->first);
+                resources->add_resource(it->first + ".off", it->first);
+            }
         }
         conf = Config::get_from_struct(&rawconf);
 
@@ -87,6 +106,7 @@ public:
         delete devices;
         delete drivers;
         delete sched;
+        delete resources;
     }
 };
 
@@ -281,7 +301,8 @@ int main(int argc, char **argv) {
     pthread_t thread;
     pthread_create(&thread, NULL, background_worker, init->sched);
 
-    Controller controller(init->conf, init->devices, init->sched);
+    Controller controller(init->conf, init->devices, init->sched,
+                          init->resources);
     while(true) {
         try {
             controller.execute();

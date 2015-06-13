@@ -27,6 +27,25 @@ ConfigInitializer::ConfigInitializer(const char *config_file_name) {
     std::unique_ptr<YamlParser> parser(YamlParser::get(fp));
     ConfigStruct rawconf;
     yaml_parse(parser.get(), &rawconf);
+
+    // Setting up resources
+    resources = new Resources;
+    for(DevicesStruct::iterator it = rawconf.devices.begin();
+        it != rawconf.devices.end(); it++) {
+        SerialDeviceStruct *device = dynamic_cast<SerialDeviceStruct*>(
+            it->second);
+        if(device == NULL) {
+            continue;
+        }
+        if(device->type.value == "switcher") {
+            resources->add_resource(it->first + ".on", it->first);
+            resources->add_resource(it->first + ".off", it->first);
+        } else if(device->type.value == "boiler") {
+            resources->add_resource(it->first + ".on", it->first);
+            resources->add_resource(it->first + ".off", it->first);
+        }
+    }
+
     conf = Config::get_from_struct(&rawconf);
 
     drivers = new TestDrivers(conf->drivers());
@@ -38,4 +57,5 @@ ConfigInitializer::~ConfigInitializer() throw() {
     delete conf;
     delete devices;
     delete drivers;
+    delete resources;
 }
