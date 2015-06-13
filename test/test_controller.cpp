@@ -67,11 +67,11 @@ class InstrResponseConnection: public BaseConnection {
             "SUCCESS=1\n"
             "ID=1:SUCCESS=1:VALUE=OK\n"
             "ID=2:SUCCESS=1:VALUE=OK\n"
-            "ID=3:SUCCESS=1:VALUE=OK\n"
             "ID=0xfff0:SUCCESS=1:VALUE=0\n"
             "ID=0xfff1:SUCCESS=1:VALUE=0.00488759\n"
             "ID=0xfff2:SUCCESS=1:VALUE=0\n"
-            "ID=0xfff3:SUCCESS=1:VALUE=0.00488759\n";
+            "ID=0xfff3:SUCCESS=1:VALUE=0.00488759\n"
+            "ID=3:SUCCESS=0:ERROR=Unable to take resource boiler.on\n";
         BOOST_CHECK_EQUAL(data, test_sample);
     }
 
@@ -83,7 +83,7 @@ class InstrResponseConnection: public BaseConnection {
             "ID=0xfff2:TYPE=VALUE:COMMAND=boiler.temperature\n"
             "ID=0xfff3:TYPE=VALUE:COMMAND=boiler.temperature\n"
             "ID=1:TYPE=SINGLE:NAME=1:COMMAND=boiler.on:START=replaceit:RESTART=2000\n"
-            "ID=2:TYPE=COUPLED:NAME=2:COMMAND=boiler.on:COUPLE=boiler.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
+            "ID=2:TYPE=COUPLED:NAME=2:COMMAND=switcher.on:COUPLE=switcher.off:COUPLING-INTERVAL=500:START=replaceit:RESTART=2000\n"
             "ID=3:TYPE=CONDITIONED:NAME=3:COMMAND=boiler.on:COUPLE=boiler.off:START=replaceit:CONDITION=boiler.temperature.LT_50";
 
         stringstream buf;
@@ -100,9 +100,10 @@ class TestController: public Controller {
 public:
     ~TestController() throw() {};
     TestController(Config *_conf,
-        Devices *_devices,
-        NamedSchedule *_sched): Controller(
-            _conf, _devices, _sched) {};
+                   Devices *_devices,
+                   NamedSchedule *_sched,
+                   Resources *_res): Controller(
+                       _conf, _devices, _sched, _res) {};
 
     BaseConnection *get_connection() {
         return new T;
@@ -112,16 +113,26 @@ public:
 
 BOOST_AUTO_TEST_CASE(test_config_response_server) {
     auto_ptr<NamedSchedule> sched(new NamedSchedule);
+    auto_ptr<Resources> res(new Resources);
+    res->add_resource("switcher.on", "switcher");
+    res->add_resource("switcher.off", "switcher");
+    res->add_resource("boiler.on", "boiler");
+    res->add_resource("boiler.off", "boiler");
     TestController<ConfigResponseConnection> ctrl(
-        init.conf, init.devices, sched.get());
+        init.conf, init.devices, sched.get(), res.get());
     ctrl.execute();
 }
 
 
 BOOST_AUTO_TEST_CASE(test_instruction_response_server) {
     auto_ptr<NamedSchedule> sched(new NamedSchedule);
+    auto_ptr<Resources> res(new Resources);
+    res->add_resource("switcher.on", "switcher");
+    res->add_resource("switcher.off", "switcher");
+    res->add_resource("boiler.on", "boiler");
+    res->add_resource("boiler.off", "boiler");
     TestController<InstrResponseConnection> ctrl(
-        init.conf, init.devices, sched.get());
+        init.conf, init.devices, sched.get(), res.get());
     ctrl.execute();
-    BOOST_CHECK_EQUAL(sched->size(), 3);
+    BOOST_CHECK_EQUAL(sched->size(), 2);
 }

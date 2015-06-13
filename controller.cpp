@@ -80,6 +80,7 @@ void Controller::execute() {
         params.devices = devices;
         params.sched = sched;
         params.request_data = req_data;
+        params.res = resources;
         params.busy = this->busy_resources;
         try {
             result = response(true, model->execute(params));
