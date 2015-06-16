@@ -487,7 +487,8 @@ string InstructionListModel::execute(model_call_params_t &params)
             auto &&it = params.sched->find(ref[NAME]);
             if(it != params.sched->end() && type != "DROP") {
                 stringstream buf;
-                buf << "Task name=" << ref[NAME] << " has taken up already, may be drop it?";
+                buf << "Task name=" << ref[NAME] <<
+                    " has taken up already, may be drop it?";
                 throw InteruptionHandling(buf.str());
             }
             if(type == "VALUE") {
@@ -531,7 +532,8 @@ string InstructionListModel::execute(model_call_params_t &params)
                     for(auto &it: params.busy->at(ref[NAME])) {
                         resources->release(it);
                     }
-                    drop_results << resp_item(ref[ID], true, "dropped") << "\n";
+                    drop_results << resp_item(std::string("DROP.") + ref[ID],
+                                              true, "dropped") << "\n";
                 }
             }
         } catch(InteruptionHandling e) {

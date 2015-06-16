@@ -486,7 +486,7 @@ BOOST_AUTO_TEST_CASE(test_instruction_list_model) {
     boost::replace_all(req, "replaceit", buf.str());
     params.request_data = req;
     BOOST_CHECK_EQUAL(model.execute(params),
-                      "ID=10:SUCCESS=1:VALUE=dropped\n"
+                      "ID=DROP.10:SUCCESS=1:VALUE=dropped\n"
                       "ID=3:SUCCESS=1:VALUE=OK\n");
     BOOST_CHECK_EQUAL(params.sched->size(), 2);
     BOOST_CHECK(dynamic_cast<CoupledCommandSchedule*>((*params.sched).at("2"))
