@@ -5,6 +5,7 @@ using namespace std;
 int Config::version = 1;
 time_t Config::startup = time(NULL);
 time_t Config::conf_change = 0;
+string Config::md5hexdigest;
 
 ParserError::ParserError(yaml_event_t *event, string message) {
     stringstream buf;
@@ -25,17 +26,40 @@ ParserError::ParserError(const ScalarElement &token, string message) {
 }
 
 
+string config_devices_t::view() const {
+    stringstream buf;
+    for(auto &it: *this) {
+        buf << it.first << ":";
+        switch(it.second->id()) {
+        case DEVICE_BOILER:
+            buf << "boiler";
+            break;
+        case DEVICE_SWITCHER:
+            buf << "switcher";
+            break;
+        case DEVICE_THERMOSWITCHER:
+            buf << "temperature";
+            break;
+        default:
+            buf << "undefined";
+        }
+        buf << "\n";
+    }
+    return buf.str();
+}
+
+
 Config* Config::get_from_struct(ConfigStruct *data) {
-    auto_ptr<config_daemon_t> daemon(new config_daemon_t);
+    unique_ptr<config_daemon_t> daemon(new config_daemon_t);
     daemon->logfile = data->daemon.logfile.value;
     daemon->pidfile = data->daemon.pidfile.value;
 
-    auto_ptr<config_connection_t> connection(new config_connection_t);
+    unique_ptr<config_connection_t> connection(new config_connection_t);
     connection->host = data->connection.host.value;
     connection->port = data->connection.port.value;
     connection->identity = data->connection.identity.value;
 
-    auto_ptr<config_drivers_t> drivers(new config_drivers_t);
+    unique_ptr<config_drivers_t> drivers(new config_drivers_t);
     for(DriversStruct::iterator it = data->drivers.begin();
         it != data->drivers.end(); it++) {
         if(dynamic_cast<SerialDriverStruct*>(it->second) != NULL) {
@@ -53,7 +77,7 @@ Config* Config::get_from_struct(ConfigStruct *data) {
         }
     }
 
-    auto_ptr<config_devices_t> devices(new config_devices_t);
+    unique_ptr<config_devices_t> devices(new config_devices_t);
     for(DevicesStruct::iterator it = data->devices.begin();
         it != data->devices.end(); it++) {
         if(dynamic_cast<SerialDeviceStruct*>(it->second) != NULL) {

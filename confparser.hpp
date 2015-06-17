@@ -303,6 +303,8 @@ public:
             delete it->second;
         }
     }
+
+    std::string view() const;
 };
 
 
@@ -317,6 +319,7 @@ public:
     static int version;
     static time_t startup;
     static time_t conf_change;
+    static std::string md5hexdigest;
 
     Config(config_drivers_t *drvrs,
            config_connection_t *conn,

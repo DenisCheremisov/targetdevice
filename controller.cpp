@@ -13,6 +13,7 @@ string Controller::greetings() {
     buf << "VERSION=" << Config::version << "\n";
     buf << "STARTUP=" << Config::startup << "\n";
     buf << "CONFIG=" << Config::conf_change << "\n";
+    buf << "CONFDIGEST=" << Config::md5hexdigest << "\n";
 
     return buf.str();
 }

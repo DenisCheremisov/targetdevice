@@ -10,7 +10,7 @@ connection:
 drivers:
   targetdevice:
     type: serial
-    path: /dev/pts/2
+    path: /dev/pts/6
 
 devices:
   boiler:

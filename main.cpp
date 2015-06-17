@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cerrno>
+#include <iomanip>
 
 #include <unistd.h>
 #include <sys/syslog.h>
@@ -8,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <fcntl.h>
+#include <openssl/md5.h>
 
 #include <err.h>
 #include <string>
@@ -40,6 +42,14 @@ public:
     NamedSchedule *sched;
     Resources *resources;
 
+    GlobalDataInitializer(GlobalDataInitializer &&tmp) {
+        conf = tmp.conf;
+        devices = tmp.devices;
+        drivers = tmp.drivers;
+        sched = tmp.sched;
+        resources = tmp.resources;
+    }
+
     GlobalDataInitializer(const char *config_file_name) {
         FILE *fp = fopen(config_file_name, "r");
         if(fp == NULL) {
@@ -49,7 +59,7 @@ public:
                 "Cannot open configuration file: %s",
                 config_file_name);
         }
-        auto_ptr<YamlParser> parser(YamlParser::get(fp));
+        unique_ptr<YamlParser> parser(YamlParser::get(fp));
         ConfigStruct rawconf;
         UserData userdata;
         yaml_parse(parser.get(), &rawconf);
@@ -86,6 +96,19 @@ public:
         drivers = new Drivers(conf->drivers());
         devices = new Devices(*drivers, conf->devices());
         sched = new NamedSchedule;
+
+        auto device_view = conf->devices().view();
+        MD5_CTX md5handler;
+        unsigned char md5digest[MD5_DIGEST_LENGTH];
+        MD5_Init(&md5handler);
+        MD5_Update(&md5handler, device_view.c_str(), device_view.length());
+        MD5_Final(md5digest, &md5handler);
+        stringstream md5hd;
+        md5hd << setfill('0');
+        for(auto i: md5digest) {
+            md5hd << hex << setw(2) << (int)i;
+        }
+        Config::md5hexdigest = md5hd.str();
 
         // Switching off devices
         for(Devices::iterator it = devices->begin();
@@ -244,19 +267,18 @@ int main(int argc, char **argv) {
         }
     }
 
-    auto_ptr<GlobalDataInitializer> init;
-    try {
-        auto_ptr<GlobalDataInitializer> _init(
-            new GlobalDataInitializer(config_file_name.c_str()));
-        init = _init;
-    } catch(exception &err) {
-        cerr << err.what() << endl;
-        exit(EXIT_FAILURE);
-    }
+    GlobalDataInitializer init = [&]() -> GlobalDataInitializer {
+        try {
+            return GlobalDataInitializer(config_file_name.c_str());
+        } catch(exception &err) {
+            cerr << err.what() << endl;
+            exit(EXIT_FAILURE);
+        }
+    }();
 
-    auto_ptr<PidfileOperator> pidoperator;
+    unique_ptr<PidfileOperator> pidoperator;
     if(daemonize) {
-        const char *pidfilename = init->conf->daemon().pidfile.c_str();
+        const char *pidfilename = init.conf->daemon().pidfile.c_str();
         PidfileOperator *pidop;
 
         try {
@@ -287,7 +309,7 @@ int main(int argc, char **argv) {
             return -1;
             break;
         case 0:
-            pidoperator = auto_ptr<PidfileOperator>(pidop);
+            pidoperator = unique_ptr<PidfileOperator>(pidop);
             pidop->write(getpid());
             break;
         default:
@@ -299,10 +321,10 @@ int main(int argc, char **argv) {
 
     // Do work
     pthread_t thread;
-    pthread_create(&thread, NULL, background_worker, init->sched);
+    pthread_create(&thread, NULL, background_worker, init.sched);
 
-    Controller controller(init->conf, init->devices, init->sched,
-                          init->resources);
+    Controller controller(init.conf, init.devices, init.sched,
+                          init.resources);
     while(true) {
         try {
             controller.execute();

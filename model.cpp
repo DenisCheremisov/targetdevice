@@ -51,27 +51,7 @@ string ConfigInfoModel::execute(model_call_params_t &params)
         throw InteruptionHandling(buf.str());
     }
 
-    stringstream buf;
-    for(config_devices_t::const_iterator it = params.config->devices().begin();
-        it != params.config->devices().end(); it++) {
-        buf << it->first << ":";
-        switch(it->second->id()) {
-        case DEVICE_BOILER:
-            buf << "boiler";
-            break;
-        case DEVICE_SWITCHER:
-            buf << "switcher";
-            break;
-        case DEVICE_THERMOSWITCHER:
-            buf << "temperature";
-            break;
-        default:
-            buf << "undefined";
-        }
-        buf << "\n";
-    }
-
-    return buf.str();
+    return params.config->devices().view();
 }
 
 
