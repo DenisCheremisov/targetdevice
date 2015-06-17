@@ -502,19 +502,15 @@ string InstructionListModel::execute(model_call_params_t &params)
                 conditionals.push_back(new ConditionInstructionLine(ref));
                 taker->approve();
             } else if(type == "DROP") {
-                if(it == params.sched->end()) {
-                    stringstream buf;
-                    buf << "No task name=" << ref[NAME] << " found to drop it";
-                    error_results << resp_item(ref[ID], false, buf.str());
-                } else {
+                if(it != params.sched->end()) {
                     UnifiedLocker<NamedSchedule> safe(params.sched);
                     safe->drop_schedule(ref[NAME]);
                     for(auto &it: params.busy->at(ref[NAME])) {
                         resources->release(it);
                     }
-                    drop_results << resp_item(std::string("DROP.") + ref[ID],
-                                              true, "dropped") << "\n";
                 }
+                drop_results << resp_item(std::string("DROP.") + ref[ID],
+                                              true, "dropped") << "\n";
             }
         } catch(InteruptionHandling e) {
             string id;
